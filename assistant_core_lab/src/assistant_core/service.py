@@ -5,7 +5,7 @@ from time import perf_counter
 
 from assistant_core.config import Settings
 from assistant_core.errors import ConfigError, InvalidRequest, ProviderError
-from assistant_core.knowledge import Handbook, OfficeDirectory
+from assistant_core.knowledge import KnowledgeBase, load_knowledge
 from assistant_core.models import Intent, Message, Response, Source
 from assistant_core.responder import Responder, StubLLMResponder, TemplateResponder
 from assistant_core.router import route
@@ -15,17 +15,16 @@ log = logging.getLogger(__name__)
 
 
 class AssistantService:
-    def __init__(self, settings: Settings, offices: OfficeDirectory, handbook: Handbook, responder: Responder):
+    def __init__(self, settings: Settings, knowledge: KnowledgeBase, responder: Responder):
         self.settings = settings
-        self.offices = offices
-        self.handbook = handbook
+        self.knowledge = knowledge
         self.responder = responder
         self.fallback = TemplateResponder()
 
     def handle(self, msg: Message) -> Response:
         """Handle a validated message without exposing provider failures."""
         start = perf_counter()
-        intent = route(msg.text, self.offices.names)
+        intent = route(msg.text, {office.name.casefold() for office in self.knowledge.offices})
         response = self._dispatch(intent, msg.text)
         log.info(
             "handled",
@@ -44,7 +43,7 @@ class AssistantService:
         if intent is Intent.FEE:
             return self._fee(text)
         if intent is Intent.OFFICE:
-            office = self.offices.find(text)
+            office = self.knowledge.find_office(text)
             if office is not None:
                 return Response(answer=f"{office.name}: room {office.room}, open {office.hours}.", intent=intent)
             return self._unknown()
@@ -65,7 +64,7 @@ class AssistantService:
         return Response(answer=f"Your tuition is {amount:,} VND.", intent=Intent.FEE)
 
     def _rule(self, text: str) -> Response:
-        rule = self.handbook.search(text)
+        rule = self.knowledge.find_rule(text)
         if rule is None:
             return self._unknown()
         sources = [Source(id=rule.id, title=rule.title)]
@@ -88,6 +87,5 @@ def create_service(settings: Settings) -> AssistantService:
     """Load knowledge and compose the offline Lab 3 provider once at startup."""
     if settings.llm_provider != "stub":
         raise ConfigError("Unsupported LLM_PROVIDER. Lab 3 supports only 'stub'.")
-    offices = OfficeDirectory.from_csv(settings.data_dir / "offices.csv")
-    handbook = Handbook.from_json(settings.data_dir / "handbook.json")
-    return AssistantService(settings, offices, handbook, StubLLMResponder())
+    knowledge = load_knowledge(settings.data_dir)
+    return AssistantService(settings, knowledge, StubLLMResponder())

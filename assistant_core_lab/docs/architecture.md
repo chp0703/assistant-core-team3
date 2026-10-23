@@ -1,113 +1,64 @@
-# Architecture
+# Kiến trúc Assistant Core — bản tích hợp member 6
 
-## Module responsibilities
+## Trách nhiệm module
 
-| Module | Responsibility |
-| --- | --- |
-| `config.py` | Load environment / optional `.env` settings and validate numeric configuration. |
-| `errors.py` | Define `AssistantError`, `ConfigError`, `DataError`, `InvalidRequest`, `ProviderError`. |
-| `models.py` | Public Pydantic `Message`, `Response`, `Intent` and `Source` contract. |
-| `router.py` | Choose greeting, fee, office or rule routing with deterministic rules. |
-| `knowledge.py` | Load and validate office CSV and handbook JSON once; look up offices and rules. |
-| `tools.py` | Parse credits and compute tuition without I/O or provider calls. |
-| `responder.py` | `Responder` protocol, predictable offline stub and template fallback. |
-| `service.py` | Compose dependencies and coordinate requests through `AssistantService.handle`. |
-| `logging_setup.py` | Set up JSON logs on stderr using an allowlist of context fields. |
-| `__main__.py` | Parse CLI arguments, initialize the service, print answers / sources, return exit codes. |
+| Module | Trách nhiệm |
+|---|---|
+| config | Settings, đọc environment/.env; không để service đọc biến môi trường trực tiếp. |
+| models / errors | Message, Response, Source, Intent; domain exceptions dùng chung. |
+| knowledge | Office, Rule, KnowledgeBase, load_knowledge; exception thực tế là KnowledgeError. |
+| router / tools | Nhận diện intent; parse tín chỉ và tính học phí deterministic. |
+| responder | Protocol Responder.explain, StubLLMResponder và TemplateResponder. |
+| logging_setup | JSON logs, whitelist metadata, mặc định stderr, không nhân handler. |
+| service | Nối các dependency, điều phối và fallback; không tự đọc CLI. |
+| __main__ | Parse argument, validate message, startup, output văn bản hoặc --json và exit code. |
 
-Dependencies flow from CLI to service to router / knowledge / tools / responder.
-Shared types and exceptions do not import the service. Importing a module does
-not read data, load `.env`, configure logging or call a provider.
+Luồng phụ thuộc: CLI → service → router/knowledge/tools/responder; các model dùng chung không import service.
+Import module không tự load file hay khởi tạo provider.
 
-## Service interface
+## Service contract
 
 ```python
-AssistantService(settings, offices, handbook, responder)
+AssistantService(settings: Settings, knowledge: KnowledgeBase, responder: Responder)
 AssistantService.handle(msg: Message) -> Response
 create_service(settings: Settings) -> AssistantService
 ```
 
-- `Message`: `text` has 1-2000 characters and cannot be whitespace-only;
-  `session_id` defaults to `local`. Construct a validated `Message` before calling the service.
-- `Response`: `answer: str`, `intent: Intent`, `sources: list[Source]`,
-  `degraded: bool = False`. `Source` contains the rule's `id` and `title`.
-- Routing priority is greeting, fee, office, then rule search. If no rule or office
-  matches, the response uses `Intent.UNKNOWN`, no sources and `degraded=False`.
-- Invalid / missing credits return a helpful `Intent.FEE` response. This is a
-  user input issue, not a provider fallback.
-- A matched rule always supplies a source. A `ProviderError` switches to
-  `TemplateResponder`, keeps that source and sets `degraded=True`.
-- Invalid messages raise Pydantic `ValidationError` at the boundary. Bad
-  configuration raises `ConfigError`; unreadable or malformed data raises
-  `DataError` during startup. Unexpected programming errors are not silently swallowed.
-- `create_service` loads knowledge once and composes the default stub. Only
-  `LLM_PROVIDER=stub` is supported in Lab 3. Other provider names are rejected
-  explicitly; real provider adapters belong to a later lab. Direct constructor
-  injection remains available for testing other `Responder` implementations.
+- Message.text được chuẩn hóa khoảng trắng biên và giới hạn 1–2000 ký tự bởi models.
+- Factory gọi load_knowledge một lần lúc startup. Chỉ llm_provider=stub được hỗ trợ; các tên khác báo ConfigError.
+- Routing: greeting → fee → office → rule. Service truyền tên office dạng casefold theo yêu cầu router.
+- Fee dùng cấu hình, không gọi LLM. InvalidRequest trở thành trả lời hướng dẫn, intent fee.
+- Rule có source id/title. ProviderError dùng TemplateResponder, giữ source và đặt degraded=True.
+- Không tìm thấy dữ liệu phù hợp trả intent unknown, sources rỗng, degraded=False, không gọi provider.
+- KnowledgeError chưa kế thừa AssistantError trong module của nhóm; CLI bắt đúng exception thực tế thay vì giả định DataError.
+- Unexpected exception không bị catch rộng.
 
-### CLI contract
+## CLI
 
-Run from `assistant_core_lab`, after `pip install -r requirements.txt` and
-`pip install -e .`:
+Chạy từ assistant_core_lab sau khi cài requirements.txt và `pip install -e .`:
 
 ```console
+python -m assistant_core "hi"
+python -m assistant_core "where is the library"
 python -m assistant_core "tuition for 18 credits and 2 retake"
-python -m assistant_core "can I register my thesis with 118 credits"
-python -m assistant_core "hi" --session-id local-demo
+python -m assistant_core --json "thesis registration credits"
 ```
 
-The CLI accepts one message per invocation (quoted or split into words).
-Answers and sources go to stdout; JSON logs and startup / validation errors
-go to stderr. Exit codes: `0` for a handled request (including unknown questions
-and invalid fee arguments), `1` for configuration / data startup errors, `2` for
-invalid CLI arguments or message validation. No interactive REPL is implemented.
+stdout: answer và sources hoặc một Response JSON. stderr: log và lỗi startup/validation.
+Exit 0 cho request đã xử lý (kể cả unknown hoặc tín chỉ không hợp lệ), 1 cho lỗi cấu hình/dữ liệu startup, 2 cho argument/message sai.
+ASSISTANT_DATA_DIR mặc định data, tương đối với thư mục đang chạy; dùng đường dẫn tuyệt đối khi chạy từ nơi khác.
+Không có interactive REPL. History/stats/save của monolith không được triển khai trong phạm vi service này.
 
-Relative `ASSISTANT_DATA_DIR` paths are relative to the working directory. Use an
-absolute path when running elsewhere. `.env` is loaded from the working directory;
-existing environment variables take precedence. Commit `.env.example`, never `.env`.
+## Quyết định và giới hạn
 
-## Architecture decisions
+1. Dependency injection giúp thay responder/test fallback không cần mạng.
+2. Học phí đi qua tools.tuition của member 4; member 6 không đổi thuật toán hay tự thêm Decimal. Công thức mặc định 18*450000 + 2*450000*1.5 = 9450000 VND.
+3. Fail fast khi file CSV/JSON thiếu hoặc hỏng; không dựng service với knowledge tải dở.
+4. Log message cố định với intent, latency_ms, session, degraded; không log provider exception hoặc câu hỏi. session_id phải là mã không nhạy cảm do caller cấp.
+5. --json serialize model Response thay vì tạo schema thứ hai; default text giữ tương thích.
+6. Settings hiện tại chủ yếu kiểm tra kiểu; chưa đảm bảo mọi giới hạn số dương hoặc multiplier hữu hạn. Không ghi nhận các validation chưa tồn tại là đã có.
+7. Không sửa workflow để bỏ lint/test. Bản sửa thích nghi API knowledge thực của nhóm và giữ các module đồng đội.
 
-1. **One orchestration entry point with dependency injection.** The CLI and future
-   HTTP / UI adapters use `handle(Message) -> Response`; tests inject failing
-   responders without network access or changes to the service.
-2. **Fees use pure functions, not an LLM.** The same arguments give the same
-   integer VND amount. Retake credits are additional to regular credits, preserving
-   the reference calculation: `18 * 450000 + 2 * 450000 * 1.5 = 9450000`.
-   Decimal arithmetic avoids binary float artefacts before truncation to whole VND.
-3. **A provider protocol separates generation from orchestration.** The offline
-   stub is deterministic and has an explicit failure switch. Provider errors use
-   a knowledge-backed template fallback instead of crashing or inventing sources.
-4. **Configuration is separate from code.** Settings come from the environment,
-   support local `.env` files, and reject non-positive rates / limits and non-finite
-   multipliers. Source uses the existing `src/` layout and pinned direct dependencies.
-5. **Startup failures are explicit.** Invalid CSV / JSON, duplicate identifiers,
-   empty datasets and missing files fail with `DataError` rather than producing a
-   partially initialized service.
-6. **Logs contain operational metadata.** Fixed messages record intent, latency,
-   session ID and fallback status. The formatter excludes arbitrary extras and
-   exception details; our call sites never log API keys, full questions or provider
-   exception messages. Session IDs must be non-sensitive identifiers. CLI error
-   output avoids Pydantic input dumps.
+## Kiểm chứng 23/10/2026
 
-## Refactoring scope and verification
-
-The Lab 3 target is greetings, office lookup, tuition, and handbook rules with
-sources. The monolith's auxiliary `history`, `stats`, and `save` commands are not
-part of this target and are not implemented in this service.
-
-Intentional changes follow the tutorial: typed boundary errors replace magic
-strings; fee formatting adds thousands separators; answers and sources are
-structured; provider simulation is deterministic. Negative / fractional credits
-and malformed datasets are explicitly rejected. Office matching uses full office
-names as in the supplied reference; partial-name matching and `help` are not added.
-
-Tests cover reference behavior, routing, model validation, bad data, configuration,
-provider fallback, safe logging and CLI subprocess behavior. The characterisation
-test compares against the provided `lab03/monolith/assistant_monolith.py` without
-calling its random provider.
-
-The supplied ZIP contained placeholders for every dependency except configuration
-and base errors. Supporting modules were implemented to make Member 6 runnable;
-reconcile them with teammates' newer implementations before integration. This
-document describes the ZIP's implementation, not unseen remote branches.
+Python 3.12.14, pytest 8.3.3, Ruff 0.6.9, Pydantic 2.9.2. Full suite 121 passed; Ruff toàn package pass. Đây là kết quả Windows local, không thay thế một GitHub Actions run trên commit mới.

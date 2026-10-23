@@ -1,11 +1,13 @@
-import logging
+import io
+import json
 from pathlib import Path
 
 import pytest
 
 from assistant_core.config import Settings
-from assistant_core.errors import ConfigError, DataError, ProviderError
-from assistant_core.knowledge import Rule
+from assistant_core.errors import ConfigError, ProviderError
+from assistant_core.knowledge import KnowledgeError, Rule
+from assistant_core.logging_setup import setup_logging
 from assistant_core.models import Intent, Message
 from assistant_core.responder import StubLLMResponder
 from assistant_core.service import AssistantService, create_service
@@ -58,7 +60,7 @@ def test_fallback_keeps_source_and_marks_degraded(service: AssistantService) -> 
     assert "120 accumulated credits" in response.answer
 
 
-def test_provider_details_and_user_text_are_not_logged(service: AssistantService, caplog) -> None:
+def test_provider_details_and_user_text_are_not_logged(service: AssistantService) -> None:
     secret = "private-key-canary"
     question = "thesis registration private-message-canary"
 
@@ -67,14 +69,21 @@ def test_provider_details_and_user_text_are_not_logged(service: AssistantService
             raise ProviderError(f"{secret}: {question}")
 
     service.responder = LeakyProvider()
-    with caplog.at_level(logging.INFO, logger="assistant_core"):
+    stream = io.StringIO()
+    logger = setup_logging(stream=stream)
+    try:
         response = service.handle(Message(text=question, session_id="session-1"))
-    assert response.degraded
-    assert "provider failed" in caplog.text
-    assert secret not in caplog.text and question not in caplog.text
-    handled = next(record for record in caplog.records if record.msg == "handled")
-    assert handled.intent == "rule" and handled.session == "session-1" and handled.degraded
-    assert handled.latency_ms >= 0
+        records = [json.loads(line) for line in stream.getvalue().splitlines()]
+        assert response.degraded
+        assert any("provider failed" in record["msg"] for record in records)
+        assert secret not in stream.getvalue() and question not in stream.getvalue()
+        handled = next(record for record in records if record["msg"] == "handled")
+        assert handled["intent"] == "rule" and handled["session"] == "session-1" and handled["degraded"]
+        assert handled["latency_ms"] >= 0
+    finally:
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+            handler.close()
 
 
 def test_service_respects_configured_fees(service: AssistantService) -> None:
@@ -93,7 +102,7 @@ def test_no_match_does_not_call_provider(service: AssistantService) -> None:
 
 
 def test_startup_missing_data_fails_fast(tmp_path: Path) -> None:
-    with pytest.raises(DataError):
+    with pytest.raises(KnowledgeError):
         create_service(Settings(data_dir=tmp_path))
 
 
