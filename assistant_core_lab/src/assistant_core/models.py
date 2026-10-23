@@ -1,6 +1,7 @@
 from enum import Enum
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 
 class Intent(str, Enum):
@@ -12,7 +13,7 @@ class Intent(str, Enum):
 
 
 class Message(BaseModel):
-    text: str = Field(min_length=1, max_length=2000)
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
     session_id: str = "local"
 
 

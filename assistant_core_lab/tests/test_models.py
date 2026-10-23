@@ -14,7 +14,7 @@ def test_message_accepts_text_length_boundaries(length: int) -> None:
     assert message.session_id == "local"
 
 
-@pytest.mark.parametrize("text", ["", "a" * 2001, None, 123])
+@pytest.mark.parametrize("text", ["", "a" * 2001, None, 123, False, [], {}, b"\xff"])
 def test_message_rejects_invalid_text(text: object) -> None:
     with pytest.raises(ValidationError) as caught:
         Message.model_validate({"text": text})
@@ -27,11 +27,53 @@ def test_message_requires_text() -> None:
         Message.model_validate({})
 
 
-def test_message_preserves_text_and_session() -> None:
-    message = Message(text="  Xin chào!  ", session_id="student-01")
+def test_message_normalizes_text_without_changing_session() -> None:
+    message = Message(text=" \tXin chào  bạn!\n ", session_id=" student-01 ")
 
-    assert message.text == "  Xin chào!  "
-    assert message.session_id == "student-01"
+    assert message.text == "Xin chào  bạn!"
+    assert message.session_id == " student-01 "
+
+
+@pytest.mark.parametrize("text", [" ", "\t\n\r", "\u00a0", "\u2003", b" \t\n"])
+def test_message_rejects_whitespace_only_text(text: object) -> None:
+    with pytest.raises(ValidationError) as caught:
+        Message.model_validate({"text": text})
+
+    assert caught.value.errors()[0]["loc"] == ("text",)
+
+
+@pytest.mark.parametrize("length", [1, 2000])
+def test_message_checks_length_after_normalization(length: int) -> None:
+    message = Message(text="\t " + "a" * length + " \n")
+
+    assert message.text == "a" * length
+
+
+def test_message_rejects_overlong_normalized_text() -> None:
+    with pytest.raises(ValidationError):
+        Message(text=" " + "a" * 2001 + " ")
+
+
+def test_message_normalizes_utf8_bytes_after_decoding() -> None:
+    message = Message.model_validate({"text": b"  hello \n"})
+
+    assert message.text == "hello"
+
+
+def test_normalized_unicode_message_survives_json_round_trip() -> None:
+    message = Message(text="\u00a0 Xin  chào 👋 \u2003")
+
+    assert message.text == "Xin  chào 👋"
+    assert Message.model_validate_json(message.model_dump_json()) == message
+
+
+def test_normalization_is_limited_to_message_text() -> None:
+    source = Source(id=" H26-5.3 ", title=" Thesis registration ")
+    response = Response(answer=" A rule. ", intent=Intent.RULE, sources=[source])
+
+    assert response.answer == " A rule. "
+    assert response.sources[0].id == " H26-5.3 "
+    assert response.sources[0].title == " Thesis registration "
 
 
 @pytest.mark.parametrize(
