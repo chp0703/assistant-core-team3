@@ -5,7 +5,6 @@ import pytest
 from assistant_core.config import Settings, load_settings
 from assistant_core.errors import ConfigError
 
-
 ENVIRONMENT_NAMES = (
     "ASSISTANT_DATA_DIR",
     "LLM_PROVIDER",
