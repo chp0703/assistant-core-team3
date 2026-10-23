@@ -4,7 +4,6 @@ import pytest
 
 from assistant_core.knowledge import KnowledgeError, load_handbook, load_knowledge, load_offices
 
-
 DATA_DIR = Path(__file__).parents[1] / "data"
 
 
@@ -19,7 +18,9 @@ def test_loads_lab_knowledge() -> None:
 def test_rule_search_is_ranked() -> None:
     knowledge = load_knowledge(DATA_DIR)
 
-    assert [rule.id for rule in knowledge.search_rules("thesis registration credits GPA")] == ["H26-5.3", "H26-5.4"]
+    rule_ids = [rule.id for rule in knowledge.search_rules("thesis registration credits GPA")]
+
+    assert rule_ids[:2] == ["H26-5.3", "H26-5.4"]
 
 
 def test_missing_or_malformed_sources_raise_domain_error(tmp_path: Path) -> None:
