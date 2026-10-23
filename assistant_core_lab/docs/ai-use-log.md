@@ -1,9 +1,9 @@
 # AI Use Log
 
-## 2026-10-23 - Hiền: shared models and exceptions
+## 2026-10-23 - Hiển: shared models and exceptions
 
 - Tool: Codex.
-- Request: implement Hiền's `models.py` and `errors.py` assignment using the Lab 3
+- Request: implement Hiển's `models.py` and `errors.py` assignment using the Lab 3
   tutorial and the team's module-based workflow, with tests and related docs.
 - AI-assisted work: drafted the Pydantic contracts, missing named exceptions,
   boundary and serialization tests, and the module contract note.

@@ -1,6 +1,6 @@
 # Models and exceptions contract
 
-Owner: Hiền (`AIVIETNAM-AIO-TheHien`). Based on tutorial Part B.2 and Steps 2 and 4.
+Owner: Hiển (`AIVIETNAM-AIO-TheHien`). Based on tutorial Part B.2 and Steps 2 and 4.
 
 ## Public models
 
