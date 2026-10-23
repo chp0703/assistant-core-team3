@@ -61,7 +61,6 @@
 - Verification: `ruff check .` passed and `pytest -q` passed with 13 tests.
 - Documents: `docs/lab3/members/phkhoiit-1508/ai_extension_review.md` and `docs/lab3/members/phkhoiit-1508/before_after.md`.
 
-
 ## 2026-10-23 — Nguyễn Trần Minh Khang: Vietnamese Tuition Request Support
 
 - **Student:** Nguyễn Trần Minh Khang
@@ -102,3 +101,28 @@ The AI-assisted development and review included three main improvements:
 
 The additional three tests in the integrated suite belong to the knowledge module.
 
+## 2026-10-23 - Hương (`thanhhuong107`): Responder and JSON Logging
+
+- Tool: OpenAI Codex.
+- Tasks: implement the `Responder` protocol with template/stub adapters and
+  configure safe JSON logging for the assistant.
+- Prompt summary: add deterministic responder adapters; emit one-line JSON with
+  only approved fields; exclude API keys and user questions; make logger setup
+  idempotent and allow an injectable stream for tests. This summary is
+  reconstructed from the assignment and checked-in code; no verbatim prompt or
+  raw first draft was saved.
+- Files generated or modified: `src/assistant_core/responder.py`,
+  `src/assistant_core/logging_setup.py`, `tests/test_responder.py`, and
+  `tests/test_logging_setup.py`.
+- Review notes: checked the JSON allowlist, repeated setup behavior, stream
+  injection, deterministic responder output, and simulated provider failure.
+  The formatter does not include arbitrary extra fields such as `api_key` or
+  `question`.
+- Verification: `python -m pytest -q tests/test_responder.py
+  tests/test_logging_setup.py` — **5 passed**; full package `python -m pytest -q`
+  after team integration — **85 passed**. Ruff was unavailable locally.
+- Documents: `docs/lab3/members/thanhhuong107/before_after.md` and
+  `docs/lab3/members/thanhhuong107/ai_extension_review.md`.
+- Personal review: Codex prepared this technical review; Hương should verify the
+  reconstructed prompt and review decisions before submitting them as her own
+  manual review.
