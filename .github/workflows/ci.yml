@@ -1,1 +1,46 @@
-# TODO: Add CI checks when later lab steps introduce their implementation.
+name: Lab 03 - Assistant Core CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-lint:
+    name: Run pytest and Ruff
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: assistant_core_lab
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: assistant_core_lab/requirements.txt
+
+      - name: Check Python version
+        run: python --version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install -e .
+
+      - name: Check code quality with Ruff
+        run: python -m ruff check .
+
+      - name: Run unit tests with pytest
+        run: python -m pytest -q
