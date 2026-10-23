@@ -48,3 +48,15 @@
 - Personal review: Hiển must inspect the implementation diff and confirm the
   documented review decisions before submission. Codex's technical review is
   not represented as an already completed student manual review.
+
+## 2026-10-23 - phkhoiit-1508: Knowledge Layer
+
+- Member: `phkhoiit-1508`.
+- Tool: Codex.
+- Tasks: implement the knowledge layer for `offices.csv` and `handbook.json`, add deterministic office lookup and handbook-rule ranking, and write tests.
+- Prompt summary: load and validate the local CSV/JSON sources, raise a domain-specific error for malformed data, avoid external APIs and secrets, and cover normal and invalid-data paths with tests.
+- Generated or modified code: `src/assistant_core/knowledge.py` and `tests/test_knowledge.py`.
+- Manual review and refinement: added `KnowledgeError`; validated required CSV columns, non-empty values, JSON shape, and rule fields; used frozen dataclasses and tuples; corrected the ranking assertion to allow all valid matches; and fixed Ruff import ordering.
+- Security/dependency review: no new dependency, API call, credential, or user data logging was introduced.
+- Verification: `ruff check .` passed and `pytest -q` passed with 13 tests.
+- Documents: `docs/lab3/members/phkhoiit-1508/ai_extension_review.md` and `docs/lab3/members/phkhoiit-1508/before_after.md`.
