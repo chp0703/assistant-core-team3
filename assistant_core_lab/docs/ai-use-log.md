@@ -60,3 +60,45 @@
 - Security/dependency review: no new dependency, API call, credential, or user data logging was introduced.
 - Verification: `ruff check .` passed and `pytest -q` passed with 13 tests.
 - Documents: `docs/lab3/members/phkhoiit-1508/ai_extension_review.md` and `docs/lab3/members/phkhoiit-1508/before_after.md`.
+
+
+## 2026-10-23 — Nguyễn Trần Minh Khang: Vietnamese Tuition Request Support
+
+- **Student:** Nguyễn Trần Minh Khang
+- **GitHub:** `kentlatoi`
+- **AI tool:** OpenAI Codex
+- **Feature:** Vietnamese Tuition Request Support
+
+### AI Usage
+
+I used Codex to implement Vietnamese tuition request recognition and credit parsing while preserving existing English functionality and the tuition calculation.
+
+The prompt focused on reusing `Intent`, `InvalidRequest`, and `tuition()`, keeping module responsibilities separate, and avoiding unnecessary dependencies or logging of user data.
+
+### Code Review and Improvements
+
+The AI-assisted development and review included three main improvements:
+
+1. **Vietnamese text recognition:** Added Unicode NFC normalization, case-insensitive matching, whitespace handling, and word boundaries to improve intent detection and reduce false positives.
+2. **Credit parsing:** Replaced loose number extraction with label-based parsing, supporting reversed credit order and rejecting duplicate labels, extra numbers, and ambiguous input.
+3. **Validation and regression:** Improved English credit parsing, handled uppercase input, rejected negative retake credits, and added regression tests.
+
+### Files Modified
+
+- `src/assistant_core/router.py`
+- `src/assistant_core/tools.py`
+- `tests/test_router.py`
+- `tests/test_tools.py`
+
+### Testing Results
+
+| Verification | Result |
+|---|---|
+| H1-focused unit tests | 27 passed |
+| Full test suite before team integration | 77 passed |
+| Full test suite after knowledge-module integration | 80 passed |
+| Ruff lint | All checks passed |
+| Ruff format check | 4 files already formatted |
+
+The additional three tests in the integrated suite belong to the knowledge module.
+
