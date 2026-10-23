@@ -126,3 +126,14 @@ The additional three tests in the integrated suite belong to the knowledge modul
 - Personal review: Codex prepared this technical review; Hương should verify the
   reconstructed prompt and review decisions before submitting them as her own
   manual review.
+
+## 2026-10-23 — Hùng (dmh612), member 6: CI, service integration, CLI JSON
+
+- Tool: OpenAI Codex. User requested CI diagnosis, test execution and member 6 documentation.
+- Work: restored prior member-6 service/CLI/tests from origin/refactor/assistant-core-dmh612 into the existing integration checkout; adapted OfficeDirectory/Handbook to KnowledgeBase/load_knowledge and actual KnowledgeError.
+- H1: added --json output of Response only, preserving text mode and stderr logs; no new dependencies.
+- Review refinements: use model serializer and early return; restrict serialized fields; add schema/source/input/Unicode/canary subprocess checks; capture actual JSON logger stream; handle invalid LOG_LEVEL at CLI startup.
+- Files: service.py, __main__.py, test_service.py, test_cli.py, architecture.md, both docs/lab3/members/dmh612 worksheets and this log.
+- Evidence: old member branch 6b51fbb passes Ruff but pytest collection fails on missing DataError. Repaired integration: 121 pytest tests pass; full Ruff passes, using pinned requirements and Python 3.12.14.
+- Publication at verification time: local edits only. The owner subsequently authorized updating existing PR #9 / issue #6. The PR branch was synchronized with main; the architecture conflict was resolved using member 6's saved document. Remote CI success is not claimed in this entry.
+- Authorship: Codex prepared the technical review. Hùng must inspect the diff and confirm the review before submitting it as personal manual review. Historical prompts/actions not supplied by Hùng are not invented.
