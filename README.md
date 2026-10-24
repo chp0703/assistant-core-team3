@@ -44,7 +44,7 @@ lab3-team3/
 │       ├── before_after_maintainability.md
 │       └── ai_extension_review.md
 │
-├── assistant_core_lab/             #Official Submission
+├── assistant_core_lab/
 │   ├── pyproject.toml
 │   ├── requirements.txt
 │   ├── .env.example
@@ -62,7 +62,7 @@ lab3-team3/
 │   │               ├── before_after.md
 │   │               └── ai_extension_review.md
 │   ├── src/
-│   │   └── assistant_core/
+│   │   └── assistant_core/           #Official Submission
 │   │       ├── __init__.py
 │   │       ├── __main__.py
 │   │       ├── config.py
