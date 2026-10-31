@@ -1,8 +1,8 @@
-# Lab 04: P1-P5 and Chat API (T1)
+# Lab 04: Chat API (T1)
 
 Branch: `feat/lab04-AIVIETNAM-AIO-TheHien-chat`.
 
-This contribution completes the personal warm-up and the assigned chat endpoint.
+This contribution implements the assigned Chat API (T1).
 Feedback (T2/T3), weather (T4), and bonus rate limiting remain separate team tasks.
 
 ## Request and response
@@ -22,19 +22,17 @@ The declared 429 response is reserved for the separate rate-limiting task.
 Run these commands from `public_materials/lab04/starter` with its virtual environment active:
 
 ```bash
-python -m pytest -q ../practice/test_hello_api.py
 python -m pytest -q tests/test_chat.py tests/test_api.py::test_health tests/test_api.py::test_chat_fee tests/test_api.py::test_chat_validation_error
-python -m ruff check ../practice/hello_api.py tests/test_chat.py
+python -m ruff check tests/test_chat.py
 ```
 
 Verified locally with Python 3.12 and the supplied pinned requirements:
 
-- Warm-up: **5 passed**.
 - Focused health/chat checks: **16 passed** (13 new cases plus 3 supplied checks).
 - Full starter suite: **33 passed, 3 failed, 1 skipped**.
 - The remaining failures are `test_feedback_roundtrip` (T2), `test_weather_ok` (T4),
   and `test_weather_down_returns_503` (T4). The rate-limit bonus remains skipped.
-- Ruff passes for the warm-up implementation and new chat tests.
+- Ruff passes for the new chat tests.
 - `main.py` still has five pre-existing Ruff findings for unused T2/T4/bonus imports and variables.
   They remain visible for their respective owners; no lint rules or tests were disabled.
 
