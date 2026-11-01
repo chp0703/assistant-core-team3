@@ -28,4 +28,9 @@ All errors use one shape: `{"error": {"code": "...", "message": "..."}}`.
 pytest -q                          # unit + API tests (external API mocked)
 bash api-tests/curl_tests.sh       # manual tests against a running server
 ```
+The API suite uses `httpx.AsyncClient` with an in-process ASGI transport. The
+curl script prints a pass/fail summary and exits non-zero if any URL returns an
+unexpected status.
+
 Postman / Bruno: import `api-tests/study-assistant.postman_collection.json`.
+Every request includes an automated response assertion.
