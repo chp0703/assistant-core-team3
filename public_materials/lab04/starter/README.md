@@ -29,3 +29,12 @@ pytest -q                          # unit + API tests (external API mocked)
 bash api-tests/curl_tests.sh       # manual tests against a running server
 ```
 Postman / Bruno: import `api-tests/study-assistant.postman_collection.json`.
+
+## Chat API (T1)
+
+`POST /v1/chat` forwards the validated message and session to `AssistantService.handle()`
+and returns the service response with a new 12-character hexadecimal `request_id`.
+`session_id` defaults to `anonymous`; invalid input returns 422 with the existing error envelope.
+
+See [Chat API checks](docs/chat-api.md) for the T1 test commands, manual requests,
+and the remaining team integration tasks.
