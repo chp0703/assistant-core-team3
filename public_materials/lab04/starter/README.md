@@ -38,3 +38,9 @@ and returns the service response with a new 12-character hexadecimal `request_id
 
 See [Chat API checks](docs/chat-api.md) for the T1 test commands, manual requests,
 and the remaining team integration tasks.
+
+## T5 - Rate limiting
+
+Chat is limited per peer IP to `RATE_LIMIT_PER_MIN` requests in a rolling
+60-second window (default 30). Excess requests receive HTTP 429 with
+`error.code=rate_limit_exceeded`. See [T5 behaviour, tests, and limitations](docs/ratelimit-dmh612.md).
