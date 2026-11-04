@@ -19,6 +19,12 @@ class Settings(BaseModel):
     retake_multiplier: float = 1.5
     max_credits: int = 30
     log_level: str = "INFO"
+    api_admin_key: str | None = Field(default=None, repr=False)
+    weather_url: str = "https://api.open-meteo.com/v1/forecast"
+    weather_timeout_s: float = Field(default=3.0, gt=0)
+    campus_lat: float = 10.7626
+    campus_lon: float = 106.6822
+    rate_limit_per_min: int = Field(default=30, gt=0)
 
 
 _ENVIRONMENT_FIELDS = {
@@ -29,6 +35,12 @@ _ENVIRONMENT_FIELDS = {
     "RETAKE_MULTIPLIER": "retake_multiplier",
     "MAX_CREDITS": "max_credits",
     "LOG_LEVEL": "log_level",
+    "API_ADMIN_KEY": "api_admin_key",
+    "WEATHER_URL": "weather_url",
+    "WEATHER_TIMEOUT_S": "weather_timeout_s",
+    "CAMPUS_LAT": "campus_lat",
+    "CAMPUS_LON": "campus_lon",
+    "RATE_LIMIT_PER_MIN": "rate_limit_per_min",
 }
 
 
