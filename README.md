@@ -1,6 +1,10 @@
-# Lab 3 — Maintainable Python Service
+# CSC10014 — Smart Virtual Assistant (Lab 03 & Lab 04)
 
-A CSC10014 project focused on refactoring a monolithic Python script into a modular, testable, and maintainable **Smart Virtual Assistant** named `assistant_core`.
+In Lab 03, we refactored the original monolithic program into a modular Python service named `assistant_core`. Lab 04 extends that Week 3 service with a FastAPI backend in `assistant_core_lab`.
+
+During the initial development of Lab 04, we implemented the API endpoints in `public_materials/lab04/starter/`. We later integrated the completed API into our existing Week 3 project under `assistant_core_lab/src/assistant_api/` to meet the assignment requirement of extending the original `assistant_core` service.
+
+The `public_materials/lab04/` directory is kept for reference, while **`assistant_core_lab/` contains the final integrated implementation** for Lab 03 and Lab 04.
 
 ## Team Members
 
@@ -15,93 +19,90 @@ A CSC10014 project focused on refactoring a monolithic Python script into a modu
 
 ## Key Features
 
-- Modular architecture with clear responsibilities.
-- Environment-based configuration and secret protection.
-- Typed data models and meaningful exceptions.
-- Office and handbook data retrieval.
-- Deterministic tuition calculations.
-- Template-based responses and fallback handling.
-- Automated testing and code quality checks.
+- Modular assistant with intent routing, tuition calculations, and office and handbook retrieval.
+- Typed models, environment-based configuration, and response fallback handling.
+- FastAPI REST API with chat connected to the Week 3 service.
+- Feedback submission and admin-protected feedback listing.
+- Campus weather with fallback handling and an office directory endpoint.
+- Per-client rate limiting for chat.
+- Automated tests and code quality checks.
 
 ## Technology Stack
 
-Python 3.10+, Pydantic, python-dotenv, pytest, Ruff, and setuptools.
+Python 3.10+, FastAPI, Pydantic, HTTPX, Uvicorn, python-dotenv, pytest, Ruff, and setuptools.
 
 ## Project Structure
 
 ```text
-lab3-team3/
-├── .github/
-│   └── workflows/                 # GitHub Actions workflows
-│
-├── lab03/
-│   ├── monolith/
-│   │   ├── assistant_monolith.py  # Original application
-│   │   └── data/
-│   │       ├── offices.csv
-│   │       └── handbook.json
-│   └── worksheets/
-│       ├── before_after_maintainability.md
-│       └── ai_extension_review.md
-│
+assistant-core-team3/
+├── .github/workflows/ci.yml
+├── lab03/                         # Original Lab 03 materials
+├── public_materials/lab04/        # Lab 04 reference and starter materials
 ├── assistant_core_lab/
 │   ├── pyproject.toml
 │   ├── requirements.txt
 │   ├── .env.example
-│   ├── .gitignore
-│   ├── data/
-│   │   ├── offices.csv
-│   │   └── handbook.json
-│   ├── docs/
-│   │   ├── architecture.md
-│   │   ├── ai-use-log.md
-│   │   └── lab3/
-│   │       ├── models_erroes.md
-│   │       └── members/
-│   │           └── chp0703/
-│   │               ├── before_after.md
-│   │               └── ai_extension_review.md
+│   ├── data/                       # Office and handbook data
+│   ├── docs/                       # Lab 03 documentation
 │   ├── src/
-│   │   └── assistant_core/           #Official Submission
-│   │       ├── __init__.py
-│   │       ├── __main__.py
-│   │       ├── config.py
-│   │       ├── errors.py
-│   │       ├── models.py
-│   │       ├── router.py
-│   │       ├── knowledge.py
-│   │       ├── tools.py
-│   │       ├── responder.py
-│   │       ├── service.py
-│   │       └── logging_setup.py
+│   │   ├── assistant_core/         # Week 3 service
+│   │   │   ├── config.py
+│   │   │   ├── knowledge.py
+│   │   │   └── service.py
+│   │   └── assistant_api/          # Integrated Lab 04 API
+│   │       ├── main.py
+│   │       ├── weather.py
+│   │       └── ratelimit.py
 │   └── tests/
-│       ├── conftest.py
-│       └──...
-│
-│
-│
-├── .gitignore
-├── pyrightconfig.json
+│       ├── test_service.py         # Original Week 3 tests
+│       └── api/                    # Lab 04 API tests
 └── README.md
 ```
 
 ## Setup and Testing
 
 ```bash
-git clone https://github.com/chp0703/lab3-team3.git
-cd lab3-team3/assistant_core_lab
+git clone https://github.com/chp0703/assistant-core-team3.git
+cd assistant-core-team3/assistant_core_lab
 python -m venv .venv
+```
+
+Activate the virtual environment with `source .venv/bin/activate` on macOS/Linux or `.venv\Scripts\Activate.ps1` in Windows PowerShell. Then install and test:
+
+```bash
 python -m pip install -r requirements.txt
 python -m pip install -e .
-python -m pytest -v
-ruff check .
+python -m pytest -q
+python -m ruff check .
 ```
+
+Start the integrated API from `assistant_core_lab/`:
+
+```bash
+uvicorn assistant_api.main:create_app --factory --reload
+```
+
+Swagger UI is available at <http://127.0.0.1:8000/docs>.
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| GET | `/health` | Check API health. |
+| POST | `/v1/chat` | Chat with the Week 3 assistant. |
+| POST | `/v1/feedback` | Submit feedback. |
+| GET | `/v1/feedback` | List feedback with an admin API key. |
+| GET | `/v1/weather` | Get campus weather. |
+| GET | `/v1/offices` | List campus offices. |
+
+POST `/v1/chat` is rate-limited per client and returns HTTP 429 when the limit is exceeded.
 
 ## Development Workflow
 
-Team members use GitHub Issues, dedicated branches, Pull Requests, peer reviews, and automated tests to manage contributions.
+Team members use GitHub Issues, dedicated branches, Pull Requests, and peer reviews to manage contributions. GitHub Actions runs pytest and Ruff. Lab 04 extends the Week 3 project without changing the original Week 3 tests.
 
-Individual deliverables include the maintainability worksheet and AI extension review. Team deliverables include the integrated `assistant_core` package and architecture documentation.
+Individual deliverables include the maintainability worksheet and AI extension review. Team deliverables include the `assistant_core` package, integrated API, and architecture documentation.
 
-**Course:** CSC10014 — Practical Track, Lab 3  
+**Course:** CSC10014 — Practical Track, Lab 03 & Lab 04
+
 **Institution:** University of Science, VNU-HCM
