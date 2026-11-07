@@ -13,6 +13,8 @@ ENVIRONMENT_NAMES = (
     "RETAKE_MULTIPLIER",
     "MAX_CREDITS",
     "LOG_LEVEL",
+    "DATABASE_URL",
+    "SESSION_SALT",
 )
 
 
@@ -20,12 +22,13 @@ ENVIRONMENT_NAMES = (
 def clear_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in ENVIRONMENT_NAMES:
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("SESSION_SALT", "test-session-salt")
 
 
 def test_loads_default_settings() -> None:
     settings = load_settings(env_file=None)
 
-    assert settings == Settings()
+    assert settings == Settings(session_salt="test-session-salt")
 
 
 def test_loads_valid_environment_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -75,6 +78,12 @@ def test_stub_provider_does_not_require_api_key() -> None:
     assert load_settings(env_file=None).llm_provider == "stub"
 
 
+def test_missing_session_salt_is_not_replaced_with_a_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SESSION_SALT")
+
+    assert load_settings(env_file=None).session_salt is None
+
+
 def test_non_stub_provider_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LLM_PROVIDER", "remote")
 
@@ -97,3 +106,7 @@ def test_invalid_numeric_configuration_raises_config_error(
 
 def test_api_key_is_not_in_settings_representation() -> None:
     assert "secret-key" not in repr(Settings(llm_api_key="secret-key"))
+
+
+def test_session_salt_is_not_in_settings_representation() -> None:
+    assert "test-session-salt" not in repr(Settings(session_salt="test-session-salt"))

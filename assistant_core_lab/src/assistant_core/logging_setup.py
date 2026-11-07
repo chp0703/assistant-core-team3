@@ -8,7 +8,7 @@ import sys
 from typing import TextIO
 
 _LOGGER_NAME = "assistant_core"
-_SAFE_EXTRA_FIELDS = ("intent", "latency_ms", "session", "degraded")
+_SAFE_EXTRA_FIELDS = ("intent", "latency_ms", "degraded")
 
 
 class JsonFormatter(logging.Formatter):

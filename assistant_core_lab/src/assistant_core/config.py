@@ -25,6 +25,8 @@ class Settings(BaseModel):
     campus_lat: float = 10.7626
     campus_lon: float = 106.6822
     rate_limit_per_min: int = Field(default=30, gt=0)
+    database_url: str = "sqlite:///assistant.db"
+    session_salt: str | None = Field(default=None, repr=False)
 
 
 _ENVIRONMENT_FIELDS = {
@@ -41,6 +43,8 @@ _ENVIRONMENT_FIELDS = {
     "CAMPUS_LAT": "campus_lat",
     "CAMPUS_LON": "campus_lon",
     "RATE_LIMIT_PER_MIN": "rate_limit_per_min",
+    "DATABASE_URL": "database_url",
+    "SESSION_SALT": "session_salt",
 }
 
 
@@ -70,5 +74,4 @@ def load_settings(env_file: str | None = ".env") -> Settings:
 
     if settings.llm_provider != "stub" and not (settings.llm_api_key and settings.llm_api_key.strip()):
         raise ConfigError("LLM_API_KEY must be set when LLM_PROVIDER is not 'stub'.")
-
     return settings

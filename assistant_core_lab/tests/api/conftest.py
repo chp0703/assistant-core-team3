@@ -12,7 +12,7 @@ DATA = Path(__file__).resolve().parents[2] / "data"
 
 @pytest.fixture
 def settings() -> Settings:
-    return Settings(data_dir=DATA)
+    return Settings(data_dir=DATA, database_url="sqlite://", session_salt="test-session-salt")
 
 
 @pytest.fixture

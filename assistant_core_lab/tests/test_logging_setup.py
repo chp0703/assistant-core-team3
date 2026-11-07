@@ -17,7 +17,7 @@ def test_json_formatter_includes_safe_fields_only() -> None:
     )
     record.intent = "fee"
     record.latency_ms = 1.2
-    record.session = "local"
+    record.session = "raw-session-privacy-sentinel"
     record.degraded = False
     record.api_key = "must-not-appear"
     record.question = "private user text"
@@ -30,9 +30,9 @@ def test_json_formatter_includes_safe_fields_only() -> None:
         "msg": "handled",
         "intent": "fee",
         "latency_ms": 1.2,
-        "session": "local",
         "degraded": False,
     }
+    assert "raw-session-privacy-sentinel" not in json.dumps(output)
 
 
 def test_setup_logging_writes_json_and_does_not_duplicate_handlers() -> None:

@@ -31,7 +31,6 @@ class AssistantService:
             extra={
                 "intent": response.intent.value,
                 "latency_ms": round((perf_counter() - start) * 1000, 3),
-                "session": msg.session_id,
                 "degraded": response.degraded,
             },
         )
