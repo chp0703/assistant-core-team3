@@ -12,8 +12,9 @@ import time
 import uuid
 from dataclasses import asdict
 from datetime import datetime, timezone
+from typing import Annotated
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -107,8 +108,8 @@ def create_app(
         return item
 
     @app.get("/v1/feedback", response_model=list[FeedbackOut], tags=["feedback"], dependencies=[Depends(require_admin)])
-    def list_feedback() -> list[FeedbackOut]:
-        return feedback_store
+    def list_feedback(limit: Annotated[int, Query(ge=0, le=2**63 - 1)] = 100) -> list[FeedbackOut]:
+        return [FeedbackOut.model_validate(row, from_attributes=True) for row in repo.list_feedback(limit)]
 
     @app.get("/v1/weather", response_model=Weather, tags=["external"], responses={503: {"model": ErrorResponse}})
     def campus_weather() -> Weather:

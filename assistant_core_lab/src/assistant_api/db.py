@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from sqlalchemy import CheckConstraint, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.pool import StaticPool
-from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
+from sqlmodel import Field, Relationship, Session, SQLModel, create_engine, select
 
 
 def utcnow() -> datetime:
@@ -99,6 +99,11 @@ class Repository:
             raise ValueError("A non-empty session salt is required.")
         self.engine = engine
         self.salt = salt
+
+    def list_feedback(self, limit: int = 100) -> list[Feedback]:
+        with Session(self.engine) as db:
+            query = select(Feedback).order_by(Feedback.created_at.desc(), Feedback.id.desc()).limit(limit)
+            return list(db.exec(query).all())
 
     def record_interaction(
         self,
