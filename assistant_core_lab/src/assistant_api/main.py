@@ -8,6 +8,7 @@ GET /v1/feedback (admin), GET /v1/weather, GET /v1/offices
 
 from __future__ import annotations
 
+import time
 import uuid
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -16,6 +17,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from assistant_api.db import Repository, init_db, make_engine
 from assistant_api.ratelimit import RateLimiter
 from assistant_api.schemas import ChatRequest, ChatResponse, ErrorResponse, FeedbackIn, FeedbackOut, Weather
 from assistant_api.weather import ExternalServiceError, WeatherClient
@@ -25,7 +27,10 @@ from assistant_core.service import AssistantService, create_service
 
 
 def create_app(
-    settings: Settings | None = None, service: AssistantService | None = None, weather: WeatherClient | None = None
+    settings: Settings | None = None,
+    service: AssistantService | None = None,
+    weather: WeatherClient | None = None,
+    repo: Repository | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
     service = service or create_service(settings)
@@ -33,6 +38,12 @@ def create_app(
         settings.weather_url, settings.campus_lat, settings.campus_lon, timeout_s=settings.weather_timeout_s
     )
     limiter = RateLimiter(settings.rate_limit_per_min)
+    if repo is None:
+        if not settings.session_salt:
+            raise ValueError("SESSION_SALT must be configured before database initialization.")
+        engine = make_engine(settings.database_url)
+        init_db(engine)
+        repo = Repository(engine, settings.session_salt)
     feedback_store: list[FeedbackOut] = []
 
     app = FastAPI(
@@ -75,8 +86,19 @@ def create_app(
         client_ip = request.client.host if request.client else "unknown"
         if not limiter.allow(client_ip):
             raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Rate limit exceeded")
+        start = time.perf_counter()
         resp = service.handle(Message(text=req.message, session_id=req.session_id))
-        return ChatResponse(**resp.model_dump(), request_id=uuid.uuid4().hex[:12])
+        request_id = uuid.uuid4().hex[:12]
+        repo.record_interaction(
+            req.session_id,
+            request_id,
+            resp.intent.value,
+            topic=resp.sources[0].id if resp.sources else None,
+            resolved=resp.intent.value != "unknown",
+            degraded=resp.degraded,
+            latency_ms=round((time.perf_counter() - start) * 1000, 2),
+        )
+        return ChatResponse(**resp.model_dump(), request_id=request_id)
 
     @app.post("/v1/feedback", response_model=FeedbackOut, status_code=201, tags=["feedback"])
     def add_feedback(fb: FeedbackIn) -> FeedbackOut:

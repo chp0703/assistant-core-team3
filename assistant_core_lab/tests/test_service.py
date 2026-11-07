@@ -63,6 +63,7 @@ def test_fallback_keeps_source_and_marks_degraded(service: AssistantService) -> 
 def test_provider_details_and_user_text_are_not_logged(service: AssistantService) -> None:
     secret = "private-key-canary"
     question = "thesis registration private-message-canary"
+    session_id = "raw-session-error-path-sentinel"
 
     class LeakyProvider:
         def explain(self, question: str, rule: Rule) -> str:
@@ -72,14 +73,34 @@ def test_provider_details_and_user_text_are_not_logged(service: AssistantService
     stream = io.StringIO()
     logger = setup_logging(stream=stream)
     try:
-        response = service.handle(Message(text=question, session_id="session-1"))
+        response = service.handle(Message(text=question, session_id=session_id))
         records = [json.loads(line) for line in stream.getvalue().splitlines()]
         assert response.degraded
         assert any("provider failed" in record["msg"] for record in records)
-        assert secret not in stream.getvalue() and question not in stream.getvalue()
+        log_output = stream.getvalue()
+        assert secret not in log_output and question not in log_output and session_id not in log_output
         handled = next(record for record in records if record["msg"] == "handled")
-        assert handled["intent"] == "rule" and handled["session"] == "session-1" and handled["degraded"]
+        assert handled["intent"] == "rule" and "session" not in handled and handled["degraded"]
         assert handled["latency_ms"] >= 0
+    finally:
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+            handler.close()
+
+
+def test_raw_session_id_is_not_logged_on_normal_handling(service: AssistantService) -> None:
+    session_id = "raw-session-normal-path-sentinel"
+    stream = io.StringIO()
+    logger = setup_logging(stream=stream)
+    try:
+        response = service.handle(Message(text="hi", session_id=session_id))
+        records = [json.loads(line) for line in stream.getvalue().splitlines()]
+
+        assert response.intent is Intent.GREETING
+        assert session_id not in stream.getvalue()
+        handled = next(record for record in records if record["msg"] == "handled")
+        assert handled["intent"] == "greeting" and handled["degraded"] is False
+        assert handled["latency_ms"] >= 0 and "session" not in handled
     finally:
         for handler in logger.handlers[:]:
             logger.removeHandler(handler)
