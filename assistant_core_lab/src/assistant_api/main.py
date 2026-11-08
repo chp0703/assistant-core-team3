@@ -11,8 +11,9 @@ from __future__ import annotations
 import time
 import uuid
 from dataclasses import asdict
+from typing import Annotated
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -43,7 +44,6 @@ def create_app(
         engine = make_engine(settings.database_url)
         init_db(engine)
         repo = Repository(engine, settings.session_salt)
-    feedback_store: list[FeedbackOut] = []
 
     app = FastAPI(
         title="Study Assistant API", version="1.0.0", description="Backend of the CSC10014 Smart Virtual Assistant."
@@ -110,14 +110,11 @@ def create_app(
         saved = repo.add_feedback(fb.request_id, fb.rating, fb.comment)
         if saved is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown request id")
-        item = FeedbackOut.model_validate(saved, from_attributes=True)
-        # Preserve the current GET contract until R2 reads feedback from SQLite.
-        feedback_store.append(item)
-        return item
+        return FeedbackOut.model_validate(saved, from_attributes=True)
 
     @app.get("/v1/feedback", response_model=list[FeedbackOut], tags=["feedback"], dependencies=[Depends(require_admin)])
-    def list_feedback() -> list[FeedbackOut]:
-        return feedback_store
+    def list_feedback(limit: Annotated[int, Query(ge=0, le=2**63 - 1)] = 100) -> list[FeedbackOut]:
+        return [FeedbackOut.model_validate(row, from_attributes=True) for row in repo.list_feedback(limit)]
 
     @app.get("/v1/weather", response_model=Weather, tags=["external"], responses={503: {"model": ErrorResponse}})
     def campus_weather() -> Weather:

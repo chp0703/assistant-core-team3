@@ -91,13 +91,13 @@ Swagger UI is available at <http://127.0.0.1:8000/docs>.
 | GET | `/health` | Check API health. |
 | POST | `/v1/chat` | Chat with the Week 3 assistant. |
 | POST | `/v1/feedback` | Persist feedback for an existing chat request; 404 for an unknown ID, 422 for invalid input. |
-| GET | `/v1/feedback` | List feedback with an admin API key. |
+| GET | `/v1/feedback` | List saved feedback newest first with an admin API key. Optional `limit` defaults to 100. |
 | GET | `/v1/weather` | Get campus weather. |
 | GET | `/v1/offices` | List campus offices. |
 
 POST `/v1/chat` is rate-limited per client and returns HTTP 429 when the limit is exceeded.
 
-### Lab 05 - feedback persistence (R1)
+### Lab 05 - feedback persistence and listing (R1 and R2)
 
 The R1 implementation lives in `assistant_core_lab/src/assistant_api/db.py`.
 `POST /v1/feedback` calls the repository and returns the saved feedback with its
@@ -107,16 +107,13 @@ returned `request_id` when submitting feedback.
 Run these checks from `assistant_core_lab/`:
 
 ```bash
-python -m pytest -q tests/api/test_add_feedback.py tests/test_db.py
+python -m pytest -q tests/api/test_add_feedback.py tests/api/test_api.py tests/test_db.py
 python -m ruff check .
 ```
 
 R1 tests cover API validation, SQLite writes, rejected requests that insert no
-rows, and persistence after reopening a database file. After a successful save,
-POST also updates the existing in-memory list so GET continues to return feedback
-within the same app instance. Reading saved feedback through GET after a restart
-requires the separate R2 listing task (#42). GitHub Actions runs this integrated
-package, including the R1 tests.
+rows, and persistence after reopening a database file. R2 reads saved feedback
+from SQLite, including feedback submitted by an earlier app instance.
 
 ## Development Workflow
 

@@ -100,6 +100,11 @@ class Repository:
         self.engine = engine
         self.salt = salt
 
+    def list_feedback(self, limit: int = 100) -> list[Feedback]:
+        with Session(self.engine) as db:
+            query = select(Feedback).order_by(Feedback.created_at.desc(), Feedback.id.desc()).limit(limit)
+            return list(db.exec(query).all())
+
     def record_interaction(
         self,
         raw_session: str,
