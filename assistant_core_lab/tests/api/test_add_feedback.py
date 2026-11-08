@@ -25,6 +25,7 @@ def anyio_backend():
 
 @pytest.fixture
 async def client(settings, service, repo):
+    settings = settings.model_copy(update={"api_admin_key": "secret-admin"})
     app = create_app(settings=settings, service=service, repo=repo)
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
@@ -53,6 +54,9 @@ async def test_post_feedback_saves_fields(client, repo, rating, comment):
         saved = db.exec(select(Feedback)).one()
         assert (saved.id, saved.request_id, saved.rating, saved.comment) == (1, request_id, rating, comment)
         assert saved.created_at == datetime.fromisoformat(body["created_at"])
+    listed = await client.get("/v1/feedback", headers={"X-API-Key": "secret-admin"})
+    assert listed.status_code == 200
+    assert listed.json() == [body]
 
 
 @pytest.mark.anyio
@@ -63,6 +67,9 @@ async def test_unknown_request_returns_404_without_saving(client, repo):
     assert response.json() == {"error": {"code": "unknown_request_id", "message": "Unknown request id"}}
     with Session(repo.engine) as db:
         assert db.exec(select(Feedback)).all() == []
+    listed = await client.get("/v1/feedback", headers={"X-API-Key": "secret-admin"})
+    assert listed.status_code == 200
+    assert listed.json() == []
 
 
 @pytest.mark.parametrize("rating,comment", [(-2, None), (2, None), (1, "x" * 501)])
@@ -75,6 +82,9 @@ async def test_invalid_feedback_returns_422_without_saving(client, repo, rating,
     assert response.json()["error"]["code"] == "invalid_request"
     with Session(repo.engine) as db:
         assert db.exec(select(Feedback)).all() == []
+    listed = await client.get("/v1/feedback", headers={"X-API-Key": "secret-admin"})
+    assert listed.status_code == 200
+    assert listed.json() == []
 
 
 def test_feedback_survives_reopening_database(tmp_path):

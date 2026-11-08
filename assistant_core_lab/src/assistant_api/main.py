@@ -110,7 +110,10 @@ def create_app(
         saved = repo.add_feedback(fb.request_id, fb.rating, fb.comment)
         if saved is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown request id")
-        return FeedbackOut.model_validate(saved, from_attributes=True)
+        item = FeedbackOut.model_validate(saved, from_attributes=True)
+        # Preserve the current GET contract until R2 reads feedback from SQLite.
+        feedback_store.append(item)
+        return item
 
     @app.get("/v1/feedback", response_model=list[FeedbackOut], tags=["feedback"], dependencies=[Depends(require_admin)])
     def list_feedback() -> list[FeedbackOut]:

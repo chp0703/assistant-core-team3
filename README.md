@@ -112,9 +112,11 @@ python -m ruff check .
 ```
 
 R1 tests cover API validation, SQLite writes, rejected requests that insert no
-rows, and persistence after reopening a database file. Full POST → SQLite → GET
-acceptance also requires the separate R2 listing task (#42). GitHub Actions runs
-this integrated package, including the R1 tests.
+rows, and persistence after reopening a database file. After a successful save,
+POST also updates the existing in-memory list so GET continues to return feedback
+within the same app instance. Reading saved feedback through GET after a restart
+requires the separate R2 listing task (#42). GitHub Actions runs this integrated
+package, including the R1 tests.
 
 ## Development Workflow
 
