@@ -131,3 +131,15 @@ class Repository:
                     latency_ms=latency_ms,
                 )
             )
+
+    def add_feedback(self, request_id: str, rating: int, comment: str | None) -> Feedback | None:
+        """Save feedback for an existing interaction and return its persisted fields."""
+        with Session(self.engine) as db:
+            interaction = db.exec(select(Interaction).where(Interaction.request_id == request_id)).first()
+            if interaction is None:
+                return None
+            feedback = Feedback(request_id=request_id, rating=rating, comment=comment)
+            db.add(feedback)
+            db.commit()
+            db.refresh(feedback)
+            return feedback

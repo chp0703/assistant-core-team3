@@ -79,7 +79,10 @@ async def test_rate_limit(client: httpx.AsyncClient) -> None:
 
 @pytest.mark.anyio
 async def test_feedback_roundtrip(client: httpx.AsyncClient) -> None:
-    response = await client.post("/v1/feedback", json={"request_id": "abc123", "rating": 1})
+    chat = await client.post("/v1/chat", json={"message": "hi"})
+    assert chat.status_code == 200
+    request_id = chat.json()["request_id"]
+    response = await client.post("/v1/feedback", json={"request_id": request_id, "rating": 1})
 
     assert response.status_code == 201
     assert response.json()["id"] == 1
@@ -208,3 +211,21 @@ async def test_list_feedback_rejects_out_of_range_limit(client: httpx.AsyncClien
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "invalid_request"
+
+
+@pytest.mark.anyio
+async def test_list_feedback_reads_saved_feedback_from_a_new_app(settings, service, tmp_path) -> None:
+    settings = settings.model_copy(
+        update={"api_admin_key": "secret-admin", "database_url": f"sqlite:///{(tmp_path / 'feedback.db').as_posix()}"}
+    )
+    async with api_client(create_app(settings, service)) as client:
+        chat = await client.post("/v1/chat", json={"message": "hi"})
+        assert chat.status_code == 200
+        feedback = await client.post("/v1/feedback", json={"request_id": chat.json()["request_id"], "rating": 1})
+        assert feedback.status_code == 201
+
+    async with api_client(create_app(settings, service)) as reopened:
+        listed = await reopened.get("/v1/feedback", headers={"X-API-Key": "secret-admin"})
+
+    assert listed.status_code == 200
+    assert listed.json() == [feedback.json()]
