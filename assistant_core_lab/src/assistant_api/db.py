@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from sqlalchemy import CheckConstraint, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.pool import StaticPool
-from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
+from sqlmodel import Field, Relationship, Session, SQLModel, create_engine, select
 
 
 def utcnow() -> datetime:
@@ -126,3 +126,15 @@ class Repository:
                     latency_ms=latency_ms,
                 )
             )
+
+    def add_feedback(self, request_id: str, rating: int, comment: str | None) -> Feedback | None:
+        """Save feedback for an existing interaction and return its persisted fields."""
+        with Session(self.engine) as db:
+            interaction = db.exec(select(Interaction).where(Interaction.request_id == request_id)).first()
+            if interaction is None:
+                return None
+            feedback = Feedback(request_id=request_id, rating=rating, comment=comment)
+            db.add(feedback)
+            db.commit()
+            db.refresh(feedback)
+            return feedback

@@ -76,7 +76,10 @@ async def test_rate_limit(client: httpx.AsyncClient) -> None:
 
 @pytest.mark.anyio
 async def test_feedback_roundtrip(client: httpx.AsyncClient) -> None:
-    response = await client.post("/v1/feedback", json={"request_id": "abc123", "rating": 1})
+    chat = await client.post("/v1/chat", json={"message": "hi"})
+    assert chat.status_code == 200
+    request_id = chat.json()["request_id"]
+    response = await client.post("/v1/feedback", json={"request_id": request_id, "rating": 1})
 
     assert response.status_code == 201
     assert response.json()["id"] == 1
