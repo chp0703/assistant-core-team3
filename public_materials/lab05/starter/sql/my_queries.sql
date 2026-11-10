@@ -16,3 +16,13 @@ GROUP BY intent
 ORDER BY intent ASC;
 
 -- Q3 topics with the most thumbs-down (JOIN feedback with interaction)
+SELECT
+    i.topic,
+    COUNT(*) AS thumbs_downs
+FROM interaction AS i
+JOIN feedback AS f ON f.request_id = i.request_id
+WHERE f.rating = -1
+  AND NULLIF(TRIM(i.topic), '') IS NOT NULL
+GROUP BY i.topic
+ORDER BY thumbs_downs DESC, i.topic ASC
+LIMIT 1;
