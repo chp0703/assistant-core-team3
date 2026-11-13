@@ -1,11 +1,13 @@
-# CSC10014 — Smart Virtual Assistant (Labs 03–05)
+# CSC10014 — Smart Virtual Assistant (Labs 03–06)
 
 This repository contains the team's integrated implementation for CSC10014 Practical Track.
 Lab 03 introduced the modular `assistant_core` service, Lab 04 added the FastAPI backend,
 and Lab 05 adds SQLite persistence, feedback workflows, and SQL analytics.
+The Lab 06 folders and files are scaffolded for RAG, grounded LLM answers,
+privacy checks, and path comparison; those features are not implemented yet.
 
 The final integrated implementation lives in `assistant_core_lab/`. The folders under
-`public_materials/` and `.lab05-reference/` contain starter materials and references;
+`public_materials/` contain starter materials and references;
 they are not the primary application entry point.
 
 ## Team Members
@@ -39,21 +41,61 @@ pytest, Ruff, and setuptools.
 ```text
 assistant-core-team3/
 ├── .github/workflows/ci.yml
-├── .lab05-reference/               # Reference copy of Lab 05 materials
 ├── assistant_core_lab/
 │   ├── pyproject.toml
 │   ├── requirements.txt
 │   ├── .env.example
-│   ├── data/                       # Office and handbook data
-│   ├── docs/                       # Architecture and AI-use documentation
+│   ├── data/
+│   │   ├── handbook.json
+│   │   ├── offices.csv
+│   │   └── kb/                     # Lab 06 sample KB copied from the starter
+│   │       ├── handbook_2026.md
+│   │       ├── fees_2026.md
+│   │       └── services_2026.md
+│   ├── eval/
+│   │   ├── cases.jsonl             # Empty; 25 + 5 evaluation cases pending
+│   │   └── compare_paths.py        # Part F / H1 scaffold
+│   ├── docs/
+│   │   ├── lab3/                   # Existing Lab 03 documentation
+│   │   └── lab6/
+│   │       └── path_comparison.md  # Report template; no measured results yet
 │   ├── scripts/                    # Migration and synthetic-data scripts
 │   ├── sql/
 │   │   ├── migrations/             # Database schema migrations
 │   │   └── my_queries.sql          # Lab 05 F1–F3 analytics queries
 │   ├── src/
-│   │   ├── assistant_core/         # Modular assistant service
-│   │   └── assistant_api/          # Integrated FastAPI and database layer
-│   └── tests/                      # Service, API, database, and persistence tests
+│   │   ├── assistant_core/
+│   │   │   ├── __init__.py
+│   │   │   ├── __main__.py
+│   │   │   ├── config.py
+│   │   │   ├── models.py
+│   │   │   ├── router.py
+│   │   │   ├── service.py          # Shared CLI and API service
+│   │   │   ├── knowledge.py
+│   │   │   ├── responder.py
+│   │   │   ├── tools.py
+│   │   │   ├── errors.py
+│   │   │   ├── logging_setup.py
+│   │   │   ├── guard.py            # Lab 06 privacy guard scaffold
+│   │   │   ├── llm.py              # Lab 06 grounded LLM scaffold (A2)
+│   │   │   ├── prompts/
+│   │   │   │   └── answer_v1.txt   # Prompt copied from the Lab 06 starter
+│   │   │   └── rag/
+│   │   │       ├── __init__.py
+│   │   │       ├── chunker.py      # Part C scaffold
+│   │   │       ├── index.py        # Part C / BM25 scaffold
+│   │   │       └── answerer.py     # Part E / A1 scaffold
+│   │   └── assistant_api/
+│   │       ├── __init__.py
+│   │       ├── main.py
+│   │       ├── db.py
+│   │       ├── schemas.py
+│   │       ├── weather.py
+│   │       └── ratelimit.py
+│   └── tests/
+│       ├── test_rag.py             # Lab 06 test scaffold; no tests yet
+│       ├── api/                    # Existing API and persistence tests
+│       └── ...                     # Existing Lab 03–05 unit tests
 ├── public_materials/
 │   ├── lab03/                      # Original Lab 03 materials
 │   ├── lab04/                      # Lab 04 starter and practice materials
@@ -99,6 +141,20 @@ The focused Lab 05 checks are:
 ```bash
 python -m pytest -q tests/api/test_add_feedback.py tests/api/test_api.py tests/test_db.py
 ```
+
+## Lab 06 Scaffold
+
+The project structure follows the Lab 03–06 guide while retaining the existing
+Lab 03–05 source, tests, data, SQL, and scripts. The sample Markdown knowledge
+base and `answer_v1.txt` are copied unchanged from `public_materials/lab06/starter/`;
+the prompt is included as package data when the project is built.
+
+`guard.py`, `llm.py`, `rag/`, `eval/compare_paths.py`, and `tests/test_rag.py`
+contain scaffolding only. They are not connected to the service or API yet.
+`eval/cases.jsonl` is empty and still needs the guide's 25 + 5 reviewed questions.
+The report template is in `assistant_core_lab/docs/lab6/path_comparison.md`.
+Run the existing checks above to check for regressions; they do not validate
+the pending Lab 06 functionality.
 
 ## Run the API
 
