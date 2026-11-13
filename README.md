@@ -39,9 +39,7 @@ pytest, Ruff, and setuptools.
 ```text
 assistant-core-team3/
 ├── .github/workflows/ci.yml
-├── lab03/                         # Original Lab 03 materials
-├── public_materials/lab05/        # Lab 05 starter and practice materials
-├── .lab05-reference/              # Reference copy of Lab 05 materials
+├── .lab05-reference/               # Reference copy of Lab 05 materials
 ├── assistant_core_lab/
 │   ├── pyproject.toml
 │   ├── requirements.txt
@@ -56,6 +54,11 @@ assistant-core-team3/
 │   │   ├── assistant_core/         # Modular assistant service
 │   │   └── assistant_api/          # Integrated FastAPI and database layer
 │   └── tests/                      # Service, API, database, and persistence tests
+├── public_materials/
+│   ├── lab03/                      # Original Lab 03 materials
+│   ├── lab04/                      # Lab 04 starter and practice materials
+│   ├── lab05/                      # Lab 05 starter and practice materials
+│   └── lab06/                      # Lab 06 starter and practice materials
 └── README.md
 ```
 

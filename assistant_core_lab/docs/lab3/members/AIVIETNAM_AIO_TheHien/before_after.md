@@ -4,11 +4,11 @@
 - Date: 2026-10-23.
 - Assignment: shared models, named exceptions and their tests.
 - Baseline: local `main` at `2999d51`; results include the H1 message-normalization extension documented here.
-- Template: `lab03/worksheets/before_after_maintainability.md`.
+- Template: `public_materials/lab03/worksheets/before_after_maintainability.md`.
 
 ## Scope of the comparison
 
-Before means the supplied `lab03/monolith/assistant_monolith.py`. After means
+Before means the supplied `public_materials/lab03/monolith/assistant_monolith.py`. After means
 the current `assistant_core_lab` working tree, including the configuration work
 from the team and Hiển's models/errors work.
 

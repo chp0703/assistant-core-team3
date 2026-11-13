@@ -5,7 +5,7 @@
 
 ## Scope
 
-“Before” is `lab03/monolith/assistant_monolith.py`. “After” is the current integrated
+“Before” is `public_materials/lab03/monolith/assistant_monolith.py`. “After” is the current integrated
 `assistant_core` package. `config.py`, `models.py`, `errors.py`, `knowledge.py`, `tools.py`, and
 `router.py` are implemented. `knowledge.py` validates the CSV and JSON data and provides office and
 rule lookup. `responder.py`, `service.py`, `logging_setup.py`, and `__main__.py` are one-line

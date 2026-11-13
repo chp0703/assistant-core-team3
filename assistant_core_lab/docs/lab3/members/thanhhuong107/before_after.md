@@ -1,6 +1,6 @@
 # Before / After Maintainability Review — Hương (`thanhhuong107`)
 
-Comparison uses `lab03/monolith/assistant_monolith.py` and the package currently
+Comparison uses `public_materials/lab03/monolith/assistant_monolith.py` and the package currently
 in `assistant_core_lab/src/assistant_core`. Tuition tools and routing are now
 implemented; `service.py` is still a placeholder, so end-to-end composition is
 not assumed.
