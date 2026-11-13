@@ -9,12 +9,26 @@ ENVIRONMENT_NAMES = (
     "ASSISTANT_DATA_DIR",
     "LLM_PROVIDER",
     "LLM_API_KEY",
+    "LLM_TIMEOUT_S",
     "CREDIT_RATE_VND",
     "RETAKE_MULTIPLIER",
     "MAX_CREDITS",
     "LOG_LEVEL",
+    "API_ADMIN_KEY",
+    "WEATHER_URL",
+    "WEATHER_TIMEOUT_S",
+    "CAMPUS_LAT",
+    "CAMPUS_LON",
+    "RATE_LIMIT_PER_MIN",
     "DATABASE_URL",
     "SESSION_SALT",
+    "RAG_ENABLED",
+    "KB_DIR",
+    "RETRIEVAL_KIND",
+    "RETRIEVAL_MIN_SCORE",
+    "LLM_MODEL",
+    "LLM_BASE_URL",
+    "PROMPT_VERSION",
 )
 
 
@@ -110,3 +124,65 @@ def test_api_key_is_not_in_settings_representation() -> None:
 
 def test_session_salt_is_not_in_settings_representation() -> None:
     assert "test-session-salt" not in repr(Settings(session_salt="test-session-salt"))
+
+
+def test_lab6_defaults_and_environment_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
+    defaults = load_settings(env_file=None)
+    assert defaults.rag_enabled is False
+    assert defaults.kb_dir == Path("data/kb")
+    assert defaults.retrieval_kind == "bm25"
+    assert defaults.retrieval_min_score == 2.0
+    assert defaults.llm_model == "llama3.2"
+    assert defaults.llm_base_url is None
+    assert defaults.llm_timeout_s == 5.0
+    assert defaults.prompt_version == "answer_v1"
+
+    monkeypatch.setenv("RAG_ENABLED", "true")
+    monkeypatch.setenv("KB_DIR", "custom/kb")
+    monkeypatch.setenv("RETRIEVAL_KIND", "hybrid")
+    monkeypatch.setenv("RETRIEVAL_MIN_SCORE", "3.5")
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("LLM_MODEL", "qwen2.5:3b")
+    monkeypatch.setenv("LLM_BASE_URL", "http://localhost:11434")
+    monkeypatch.setenv("LLM_TIMEOUT_S", "12")
+    monkeypatch.setenv("PROMPT_VERSION", "answer_v2")
+
+    configured = load_settings(env_file=None)
+    assert configured.rag_enabled is True
+    assert configured.kb_dir == Path("custom/kb")
+    assert configured.retrieval_kind == "hybrid"
+    assert configured.retrieval_min_score == 3.5
+    assert configured.llm_provider == "ollama"
+    assert configured.llm_model == "qwen2.5:3b"
+    assert configured.llm_base_url == "http://localhost:11434"
+    assert configured.llm_timeout_s == 12.0
+    assert configured.prompt_version == "answer_v2"
+
+
+def test_kb_dir_follows_data_dir_and_normalizes_empty_optional_strings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ASSISTANT_DATA_DIR", "alt-data")
+    monkeypatch.setenv("LLM_API_KEY", "   ")
+    monkeypatch.setenv("LLM_BASE_URL", "")
+
+    settings = load_settings(env_file=None)
+    assert settings.kb_dir == Path("alt-data/kb")
+    assert settings.llm_api_key is None
+    assert settings.llm_base_url is None
+
+
+@pytest.mark.parametrize(
+    ("environment_name", "value"),
+    (
+        ("RETRIEVAL_KIND", "dense"),
+        ("RETRIEVAL_MIN_SCORE", "-0.5"),
+        ("LLM_TIMEOUT_S", "0"),
+        ("RAG_ENABLED", "maybe"),
+    ),
+)
+def test_invalid_lab6_configuration_raises_config_error(
+    monkeypatch: pytest.MonkeyPatch, environment_name: str, value: str
+) -> None:
+    monkeypatch.setenv(environment_name, value)
+
+    with pytest.raises(ConfigError, match="Invalid configuration"):
+        load_settings(env_file=None)
