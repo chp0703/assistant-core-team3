@@ -63,4 +63,17 @@ def test_bm25_results_are_bounded_valid_and_deterministic(chunks: list[Chunk]) -
 def test_bm25_excludes_zero_scores_and_handles_empty_index(chunks: list[Chunk]) -> None:
     assert make_index("bm25", []).search("thesis") == []
     assert make_index("bm25", chunks).search("thesis", 0) == []
+    assert make_index("bm25", chunks).search("thesis", -1) == []
     assert all(hit.score > 0 for hit in make_index("bm25", chunks).search("thesis", len(chunks)))
+
+
+def test_equal_bm25_scores_break_ties_by_chunk_id() -> None:
+    chunks = [
+        Chunk(id=chunk_id, doc_id=chunk_id, title="Shared term", text="same text", version="1", owner="Office")
+        for chunk_id in ("Z#1", "A#1")
+    ]
+
+    hits = make_index("bm25", chunks).search("shared")
+
+    assert [hit.chunk.id for hit in hits] == ["A#1", "Z#1"]
+    assert hits[0].score == hits[1].score > 0
