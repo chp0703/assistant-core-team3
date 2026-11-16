@@ -6,7 +6,7 @@ import sys
 from pydantic import ValidationError
 
 from assistant_core.config import load_settings
-from assistant_core.errors import ConfigError
+from assistant_core.errors import ConfigError, DataError
 from assistant_core.knowledge import KnowledgeError
 from assistant_core.logging_setup import setup_logging
 from assistant_core.models import Message
@@ -14,7 +14,7 @@ from assistant_core.service import create_service
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Ask the offline Lab 3 study assistant.")
+    parser = argparse.ArgumentParser(description="Ask the study assistant.")
     parser.add_argument("text", nargs="+", help="A message of 1 to 2000 characters.")
     parser.add_argument("--session-id", default="local", help="A non-sensitive session identifier.")
     parser.add_argument("--json", action="store_true", help="Print the structured Response as JSON.")
@@ -31,7 +31,7 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as error:
             raise ConfigError("Invalid LOG_LEVEL.") from error
         service = create_service(settings)
-    except (ConfigError, KnowledgeError) as error:
+    except (ConfigError, DataError, KnowledgeError) as error:
         print(f"Cannot start assistant: {error}", file=sys.stderr)
         return 1
     response = service.handle(msg)
