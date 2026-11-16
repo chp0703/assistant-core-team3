@@ -107,3 +107,23 @@ def test_chat_invalid_input_returns_contract_error(chat_client, service, monkeyp
     assert error["code"] == "invalid_request"
     assert error["message"]
     handle.assert_not_called()
+
+
+def test_chat_rag_enabled_preserves_schema_privacy_and_deterministic_routes(settings) -> None:
+    rag_settings = settings.model_copy(update={"rag_enabled": True, "kb_dir": settings.data_dir / "kb"})
+    with TestClient(create_app(settings=rag_settings)) as client:
+        kb_res = client.post("/v1/chat", json={"message": "I lost my student card"})
+        assert kb_res.status_code == 200
+        kb_body = kb_res.json()
+        assert set(kb_body) == {"answer", "intent", "sources", "degraded", "request_id"}
+        assert kb_body["intent"] == "rule"
+        assert [source["id"] for source in kb_body["sources"]] == ["S26#3"]
+
+        privacy_res = client.post("/v1/chat", json={"message": "what grade did my friend get"})
+        assert privacy_res.status_code == 200
+        assert privacy_res.json()["intent"] == "unknown"
+        assert privacy_res.json()["sources"] == []
+
+        fee_res = client.post("/v1/chat", json={"message": "tuition for 18 credits and 2 retake"})
+        assert fee_res.status_code == 200
+        assert fee_res.json()["intent"] == "fee" and "9,450,000 VND" in fee_res.json()["answer"]

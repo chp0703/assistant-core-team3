@@ -146,3 +146,19 @@ def test_cli_missing_or_malformed_handbook_is_controlled(tmp_path: Path, handboo
     assert result.returncode == 1 and result.stdout == ""
     assert "Cannot start assistant:" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_cli_with_rag_enabled_uses_kb_and_preserves_json_contract() -> None:
+    result = run_cli("--json", "I lost my student card", RAG_ENABLED="true")
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    assert set(payload) == {"answer", "intent", "sources", "degraded"}
+    assert payload["intent"] == "rule"
+    assert [source["id"] for source in payload["sources"]] == ["S26#3"]
+
+
+def test_cli_with_rag_enabled_handles_missing_kb_controlled() -> None:
+    result = run_cli("--json", "hi", RAG_ENABLED="true", KB_DIR="does-not-exist-kb")
+    assert result.returncode == 1 and result.stdout == ""
+    assert "Cannot start assistant:" in result.stderr
+    assert "Traceback" not in result.stderr

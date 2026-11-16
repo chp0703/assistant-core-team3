@@ -142,3 +142,27 @@ def test_unsupported_provider_does_not_silently_use_stub(data_dir: Path) -> None
 )
 def test_reference_tuition_amounts(service: AssistantService, text: str, amount: str) -> None:
     assert service.handle(Message(text=text)).answer == f"Your tuition is {amount} VND."
+
+
+def test_rag_enabled_service_integrates_kb_and_keeps_deterministic_routes(data_dir: Path) -> None:
+    from assistant_core.errors import DataError
+
+    rag_service = create_service(Settings(data_dir=data_dir, rag_enabled=True))
+    assert rag_service.rag is not None
+
+    rule_resp = rag_service.handle(Message(text="I lost my student card"))
+    assert rule_resp.intent is Intent.RULE
+    assert [source.id for source in rule_resp.sources] == ["S26#3"]
+    assert "room I.102" in rule_resp.answer
+
+    fee_resp = rag_service.handle(Message(text="tuition for 18 credits and 2 retake"))
+    assert fee_resp.intent is Intent.FEE and "9,450,000 VND" in fee_resp.answer
+
+    office_resp = rag_service.handle(Message(text="where is the library"))
+    assert office_resp.intent is Intent.OFFICE and "B.201" in office_resp.answer
+
+    private_resp = rag_service.handle(Message(text="phone of 22127001"))
+    assert private_resp.intent is Intent.UNKNOWN and private_resp.sources == []
+
+    with pytest.raises(DataError):
+        create_service(Settings(data_dir=data_dir, kb_dir=data_dir / "missing-kb", rag_enabled=True))
