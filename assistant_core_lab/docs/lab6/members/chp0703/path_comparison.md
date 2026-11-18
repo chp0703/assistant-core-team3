@@ -1,58 +1,53 @@
-# Châu Hòa Phát — Stage 3: Service, CLI & API RAG Integration
+# Châu Hòa Phát — Lab 06 Integration & Individual Path Comparison
 
-Owner: Châu Hòa Phát (`@chp0703`).  
-Branch: `feat/lab06-unify-service` (branched from `main` at `c74bfa4`).
+## My Part — Stage 0 Foundation & Stage 3 Service/CLI/API Integration
 
-This document records Stage 3 unified service integration (`Contract #5`) and serves as the handoff to Stage 4 (`Contract #6 — Part F` owned by `@phkhoiit-1508`).
+I am `@chp0703`. My assigned scope covered the shared RAG contract foundation in [PR #53](https://github.com/chp0703/assistant-core-team3/pull/53) and the Stage 3 unified service, CLI, and FastAPI integration in [PR #61](https://github.com/chp0703/assistant-core-team3/pull/61). I worked on [`rag/types.py`](../../../../src/assistant_core/rag/types.py), [`config.py`](../../../../src/assistant_core/config.py), [`service.py`](../../../../src/assistant_core/service.py), [`__main__.py`](../../../../src/assistant_core/__main__.py), [`test_rag.py`](../../../../tests/test_rag.py), [`test_service.py`](../../../../tests/test_service.py), [`test_cli.py`](../../../../tests/test_cli.py), and [`test_chat.py`](../../../../tests/api/test_chat.py). Part C retrieval, Part D LLM/A2 grounding, Part E A1 abstain/guard, Part F runner, and H1 evaluation cases were implemented by the assigned teammates on the same codebase.
 
-## Scope Implemented
+[`service.py`](../../../../src/assistant_core/service.py) preserves `create_service(settings) -> AssistantService` and extends `AssistantService` with optional `rag: RagAnswerer | None = None`. When `RAG_ENABLED=false` (the default), Lab 03–05 behavior remains unchanged. When `RAG_ENABLED=true`, `create_service` loads chunks and the configured index (`bm25` by default), constructs the LLM adapter (`stub`, `template` for retrieval-only `llm=None`, `ollama`, or `openai`), enforces `is_private_request()` before routing, keeps deterministic `GREETING`, `FEE`, and `OFFICE` paths intact, routes regulation questions through `RagAnswerer.answer()`, and maps internal `RagResult` values onto the preserved public `Response` without modifying `ChatResponse`. `AssistantService.handle_with_rag_result()` exposes internal `RagResult` metadata cleanly for evaluation, while CLI ([`__main__.py`](../../../../src/assistant_core/__main__.py)) and FastAPI ([`main.py`](../../../../src/assistant_api/main.py)) share `load_settings()` → `create_service(settings)`.
 
-- `src/assistant_core/service.py`:
-  - Preserved `create_service(settings: Settings) -> AssistantService` (did not rename to `build_service()`).
-  - Added optional `rag: RagAnswerer | None = None` to `AssistantService.__init__`, keeping Lab 03–05 behavior intact whenever `rag is None` (`RAG_ENABLED=false`, default).
-  - Wired `create_service(settings)` when `rag_enabled=True` using `load_folder(kb_dir)` + `make_index(settings.retrieval_kind, chunks)` + `_build_rag_llm(settings)` (`stub`, `template` as retrieval-only `llm=None`, `ollama`, `openai`) + `RagAnswerer(..., min_score=settings.retrieval_min_score, prompt_version=settings.prompt_version)`.
-  - Added `AssistantService.handle_with_rag_result(msg)` so internal evaluation can inspect `(Response, RagResult | None)` without adding `path`, `escalate`, or `confidence` to the public `Response` or HTTP `ChatResponse` schema.
-  - Applied `is_private_request()` before `route()` (Greeting, Fee, Office, Retrieval/LLM) whenever RAG is enabled, while preserving existing deterministic rules/tools for `GREETING`, `FEE`, and `OFFICE`.
-  - Converted startup failures (`missing/empty kb_dir`, invalid `LLM_PROVIDER`, missing `LLM_API_KEY`) to fail fast with `DataError` or `ConfigError` without leaking secrets.
-- `src/assistant_core/__main__.py`:
-  - Caught `DataError` alongside `(ConfigError, KnowledgeError)` so CLI startup failures with `RAG_ENABLED=true` exit cleanly with code `1` and no traceback.
-- Tests added/completed:
-  - Replaced scaffold in `tests/test_rag.py` with 10 end-to-end integration tests covering `create_service`, `RAG_ENABLED=false/true`, deterministic routes preserved, privacy before fee/office/retrieval, `template`/`ollama`/`openai` settings forwarding, fail-fast startup validation, provider secret-safe fallback logging, and CLI + FastAPI shared-config parity with SQLite persistence.
-  - Extended `tests/test_service.py`, `tests/test_cli.py`, and `tests/api/test_chat.py` for Stage 3 verification.
+## Testing
 
-## Handoff to Stage 4 (Part F — Khôi `@phkhoiit-1508`)
+At Stage 0 ([PR #53](https://github.com/chp0703/assistant-core-team3/pull/53)), the suite had **197 passed** and Ruff passed. At Stage 3 ([PR #61](https://github.com/chp0703/assistant-core-team3/pull/61)), [`tests/test_rag.py`](../../../../tests/test_rag.py) had **10 passed**, the full suite reached **353 passed**, and Ruff passed (both historical submission snapshots).
 
-- Both CLI (`assistant_core.__main__`) and FastAPI (`assistant_api.main.create_app`) construct `AssistantService` via `load_settings()` -> `create_service(settings)`.
-- Public `Response` and HTTP `ChatResponse` intentionally omit `path`, `escalate`, and `confidence` per `Contract #5`.
-- For `eval/compare_paths.py`, call `response, rag_result = service.handle_with_rag_result(Message(text=case["question"]))`:
-  - When `rag_result is not None`, inspect `rag_result.path`, `rag_result.escalate`, `rag_result.confidence`, and `rag_result.degraded`.
-  - When `rag_result is None`, the request took a deterministic route (`greeting`, `fee`, `office`, or Lab 03 handbook fallback).
-- Routing observation on the 25-case `eval/cases.jsonl` preview (`RAG_ENABLED=true`, `LLM_PROVIDER=stub`): 20/25 pass with expected outcomes, and the 5 remaining cases (`E13`, `E14`, `E15`, `E19`, `E23`) reflect genuine Lab 06 router/BM25/stub limitations (`E13` matches `tuition` -> deterministic `FEE`; `E15`/`E23` match `library` -> deterministic `OFFICE`; `E14` BM25 ranks `H26#7.2` above `H26#6.1`; `E19` BM25 exceeds threshold `2.0`). Per `Contract #5` and `#7`, Greeting/Fee/Office rules were kept intact rather than bypassed with ad-hoc hacks so Part F can analyze authentic failure modes.
-
-## Three-Path Comparison Status
-
-Official 3-path comparison and latency measurements remain pending Stage 4 (`eval/compare_paths.py` owned by `@phkhoiit-1508`). No comparison numbers are invented here.
-
-| Path | Correct / total | Correct abstentions | p50 / max latency | Status |
-| --- | --- | --- | --- | --- |
-| Deterministic | Not measured | Not measured | Not measured | Pending Stage 4 (`eval/compare_paths.py`) |
-| Retrieval | Not measured | Not measured | Not measured | Pending Stage 4 (`eval/compare_paths.py`) |
-| LLM (stub) | Not measured | Not measured | Not measured | Pending Stage 4 (`eval/compare_paths.py`) |
-
-## Verification
-
-Run from `assistant_core_lab/`:
-
-```bash
-.venv/Scripts/python -m pytest -q tests/test_rag.py
-.venv/Scripts/python -m pytest -q
-ruff check .
-```
-
-Verified on 2026-11-16 (`Python 3.12.2`, `ruff 0.6.9`, `StubLLM` offline, no live API calls):
+For this updated individual evidence on `main` (`eb1e591`), I reran the checks from `assistant_core_lab/` on 2026-11-18 using the repository `.venv` (Python 3.12.2, `ruff 0.6.9`, offline `StubLLM`, no live API calls):
 
 | Check | Observed result |
 | --- | --- |
-| `tests/test_rag.py` | 10 passed |
-| Full pytest suite | 353 passed, 0 failed, 0 skipped (1 existing Starlette/AnyIO `BlockingPortal` deprecation warning) |
+| `pytest -q tests/test_rag.py` | 10 passed |
+| Full pytest regression (`pytest -q -ra`) | 356 passed, 0 failed, 0 skipped (1 existing Starlette/AnyIO `BlockingPortal` deprecation warning) |
 | `ruff check .` | All checks passed |
+
+## Path Comparison
+
+The merged [Part F report](../../path_comparison.md) from [PR #63](https://github.com/chp0703/assistant-core-team3/pull/63) records this **shared 2026-11-16 run** on the same [25 cases](../../../../eval/cases.jsonl):
+
+| Path | Correct / total | Correct abstentions | p50 | Max |
+| --- | --- | --- | --- | --- |
+| Deterministic | 9 / 25 | 7 / 7 | 0.05 ms | 0.75 ms |
+| Retrieval | 20 / 25 | 6 / 7 | 0.10 ms | 0.27 ms |
+| LLM (stub) | 20 / 25 | 6 / 7 | 0.57 ms | 1.37 ms |
+
+My **new local run** of [`python eval/compare_paths.py`](../../../../eval/compare_paths.py) on `main` (`eb1e591`, 2026-11-18) measured:
+
+| Path | Correct / total | Correct abstentions | p50 | Max |
+| --- | --- | --- | --- | --- |
+| Deterministic | 9 / 25 | 7 / 7 | 0.02 ms | 1.44 ms |
+| Retrieval | 20 / 25 | 6 / 7 | 0.03 ms | 0.08 ms |
+| LLM (stub) | 20 / 25 | 6 / 7 | 0.17 ms | 9.44 ms |
+
+Failed cases match the shared Part F report across both runs:
+
+- Deterministic: `E01 E02 E05 E06 E07 E08 E09 E10 E11 E12 E13 E14 E15 E21 E22 E23`
+- Retrieval: `E13 E14 E15 E19 E23`
+- LLM (stub): `E13 E14 E15 E19 E23`
+
+All paths execute through the shared `AssistantService` routing pipeline, keeping Fee and Office rules intact per Contract #5 rather than adding ad-hoc hacks for `E13` (`tuition` routed to `FEE`) or `E15`/`E23` (`library` routed to `OFFICE`). `E14` reflects BM25 ranking `H26#7.2` above `H26#6.1`, and `E19` reflects BM25 scoring above `RETRIEVAL_MIN_SCORE=2.0` on a question requiring abstention.
+
+## Observations and Conclusion
+
+1. Integrating `RagAnswerer` behind `AssistantService` lifts accuracy from **9/25** (deterministic) to **20/25** while keeping deterministic Fee, Office, Greeting, SQLite persistence, CLI, and FastAPI `ChatResponse` contracts intact.
+2. Enforcing `is_private_request()` before `route()` protects third-party student queries (`E18`, `E24`, and ID-bearing requests even when fee/office keywords appear), and keeping `RagResult` internal via `handle_with_rag_result()` avoids breaking Lab 03–05 response schemas.
+3. Both Retrieval and `StubLLM` share the exact same 5 failures (`E13`, `E14`, `E15`, `E19`, `E23`) because routing precedence (`tuition`, `library`) and BM25 lexical ranking/threshold happen before LLM generation; `parse_draft` enforces citation grounding against retrieved hits, while live-model behavior and threshold calibration remain outside these 25 offline stub cases.
+
+The shared A1 [`RagAnswerer`](../../../../src/assistant_core/rag/answerer.py) abstains before calling the model on missing/low-score evidence or private requests, and shared A2 [`parse_draft`](../../../../src/assistant_core/llm.py) rejects invalid schemas, missing citations, or unretrieved source IDs on non-abstaining drafts. Integrating RAG as a modular dependency behind `AssistantService` lets CLI and FastAPI share one configuration and fallback boundary safely.
