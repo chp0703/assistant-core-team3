@@ -19,7 +19,7 @@ from assistant_core.__main__ import main as cli_main
 from assistant_core.config import Settings, load_settings
 from assistant_core.errors import ConfigError, DataError, ProviderError
 from assistant_core.guard import PRIVATE_REPLY
-from assistant_core.llm import OllamaLLM, OpenAICompatibleLLM, StubLLM
+from assistant_core.llm import OllamaLLM, OpenAICompatibleLLM, StubLLM, parse_draft
 from assistant_core.logging_setup import setup_logging
 from assistant_core.models import Intent, Message, Response
 from assistant_core.rag.types import RagResult
@@ -288,3 +288,33 @@ def test_assistant_service_rejects_broken_explicit_service_without_mutating_rag_
     )
     assert service.rag is None
     assert service.handle(Message(text="hi")).intent is Intent.GREETING
+
+
+def test_rag_citation_grounding_rejects_forged_and_missing_citations() -> None:
+    for bad_sources in ([], ["H26#9.9"], ["H26#5.3", "H26#9.9"]):
+        raw = json.dumps({"answer": "Invented rule.", "source_ids": bad_sources, "confidence": 0.9, "abstain": False})
+        with pytest.raises(ProviderError, match="answer cites sources that were not retrieved"):
+            parse_draft(raw, {"H26#5.3"})
+
+    class ForgingCitationLLM:
+        name = "forging"
+
+        def complete(self, prompt: str) -> str:
+            return json.dumps(
+                {
+                    "answer": "Fabricated rule from nonexistent section.",
+                    "source_ids": ["H26#9.9"],
+                    "confidence": 0.95,
+                    "abstain": False,
+                }
+            )
+
+    service = create_service(Settings(data_dir=DATA_DIR, kb_dir=KB_DIR, rag_enabled=True))
+    assert service.rag is not None
+    service.rag.llm = ForgingCitationLLM()
+
+    response, rag_result = service.handle_with_rag_result(Message(text="can I register my thesis with 118 credits"))
+    assert response.degraded is True
+    assert rag_result is not None and rag_result.path == "retrieval"
+    assert [source.id for source in response.sources] == ["H26#5.3"]
+    assert "Fabricated rule" not in response.answer
