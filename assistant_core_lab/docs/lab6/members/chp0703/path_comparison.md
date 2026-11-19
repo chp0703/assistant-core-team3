@@ -51,3 +51,11 @@ All paths execute through the shared `AssistantService` routing pipeline, keepin
 3. Both Retrieval and `StubLLM` share the exact same 5 failures (`E13`, `E14`, `E15`, `E19`, `E23`) because routing precedence (`tuition`, `library`) and BM25 lexical ranking/threshold happen before LLM generation; `parse_draft` enforces citation grounding against retrieved hits, while live-model behavior and threshold calibration remain outside these 25 offline stub cases.
 
 The shared A1 [`RagAnswerer`](../../../../src/assistant_core/rag/answerer.py) abstains before calling the model on missing/low-score evidence or private requests, and shared A2 [`parse_draft`](../../../../src/assistant_core/llm.py) rejects invalid schemas, missing citations, or unretrieved source IDs on non-abstaining drafts. Integrating RAG as a modular dependency behind `AssistantService` lets CLI and FastAPI share one configuration and fallback boundary safely.
+
+## H2 — Reflection (5 Lines)
+
+1. RAG is like taking an open-book exam: our search code first finds the exact official paragraph in the faculty's documents before the language model writes anything.
+2. The model receives only the retrieved passages and the student's question, so its job is to summarize what is on the page rather than guess from memory.
+3. If search finds no passage strong enough (or detects a private-data request), our code abstains before calling the model and refers the student to staff.
+4. Unlike the model itself, our code strictly checks the JSON schema and verifies via A2 grounding that every cited source ID actually came from the retrieved chunks.
+5. Whenever the model fails those checks or goes offline, the service retries once and safely falls back to quoting the verified source chunk directly.
