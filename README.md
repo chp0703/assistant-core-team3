@@ -2,9 +2,10 @@
 
 This repository contains the team's integrated implementation for CSC10014 Practical Track.
 Lab 03 introduced the modular `assistant_core` service, Lab 04 added the FastAPI backend,
-and Lab 05 adds SQLite persistence, feedback workflows, and SQL analytics.
-The Lab 06 folders and files are scaffolded for RAG, grounded LLM answers,
-privacy checks, and path comparison; those features are not implemented yet.
+Lab 05 added SQLite persistence, feedback workflows, and SQL analytics, and Lab 06 adds
+Markdown knowledge-base chunking, BM25/TF-IDF/Hybrid retrieval, grounded structured LLM answers
+(A2), low-evidence abstention and privacy guardrails (A1), unified CLI/FastAPI integration,
+a 25-case evaluation set (H1), and a three-path comparison report (Part F).
 
 The final integrated implementation lives in `assistant_core_lab/`. The folders under
 `public_materials/` contain starter materials and references;
@@ -30,6 +31,11 @@ they are not the primary application entry point.
 - Admin-protected feedback listing with newest-first ordering and a configurable limit.
 - SQL analytics for requests per intent, average latency, and downvoted topics.
 - Per-client rate limiting, automated tests, and Ruff checks.
+- Markdown knowledge-base chunking (`data/kb/*.md`) with BM25, TF-IDF, and Hybrid retrieval (Part C) plus S1–S3 mini search warm-up (`practice/mini_search.py`).
+- Structured LLM adapter (`StubLLM` offline default, optional Ollama/OpenAI-compatible) with A2 citation grounding validation and safe fallback (Part D).
+- A1 low-evidence abstention and bilingual privacy guardrails running before retrieval and LLM calls (Part E).
+- Unified `create_service(settings)` RAG integration shared by CLI and FastAPI (opt-in via `RAG_ENABLED=true`, preserving Lab 03–05 response contracts).
+- Three-path evaluation runner (`eval/compare_paths.py`), 25-case H1 dataset (`eval/cases.jsonl`), and comparison + H2 reflection report (`docs/lab6/path_comparison.md`).
 
 ## Technology Stack
 
@@ -53,12 +59,17 @@ assistant-core-team3/
 │   │       ├── fees_2026.md
 │   │       └── services_2026.md
 │   ├── eval/
-│   │   ├── cases.jsonl             # Empty; 25 + 5 evaluation cases pending
-│   │   └── compare_paths.py        # Part F / H1 scaffold
+│   │   ├── cases.jsonl             # 25 official evaluation cases (20 starter + 5 H1)
+│   │   └── compare_paths.py        # Part F three-path comparison runner
+│   ├── practice/
+│   │   ├── mini_search.py          # Lab 06 warm-up S1–S3 inverted index & ranking
+│   │   └── test_mini_search.py     # Unit tests for S1–S3 mini search
 │   ├── docs/
 │   │   ├── lab3/                   # Existing Lab 03 documentation
 │   │   └── lab6/
-│   │       └── path_comparison.md  # Report template; no measured results yet
+│   │       ├── rag_integration_contract.md  # Team 3 Lab 06 integration contract
+│   │       ├── path_comparison.md  # Part F comparison table, analysis & H2 reflection
+│   │       └── members/            # Per-member Lab 06 evidence & comparisons
 │   ├── scripts/                    # Migration and synthetic-data scripts
 │   ├── sql/
 │   │   ├── migrations/             # Database schema migrations
@@ -70,21 +81,22 @@ assistant-core-team3/
 │   │   │   ├── config.py
 │   │   │   ├── models.py
 │   │   │   ├── router.py
-│   │   │   ├── service.py          # Shared CLI and API service
+│   │   │   ├── service.py          # Shared CLI and API service (with optional RAG)
 │   │   │   ├── knowledge.py
 │   │   │   ├── responder.py
 │   │   │   ├── tools.py
 │   │   │   ├── errors.py
 │   │   │   ├── logging_setup.py
-│   │   │   ├── guard.py            # Lab 06 privacy guard scaffold
-│   │   │   ├── llm.py              # Lab 06 grounded LLM scaffold (A2)
+│   │   │   ├── guard.py            # Lab 06 privacy guardrails
+│   │   │   ├── llm.py              # Lab 06 LLM adapters & A2 grounding check
 │   │   │   ├── prompts/
-│   │   │   │   └── answer_v1.txt   # Prompt copied from the Lab 06 starter
+│   │   │   │   └── answer_v1.txt   # Versioned prompt template
 │   │   │   └── rag/
 │   │   │       ├── __init__.py
-│   │   │       ├── chunker.py      # Part C scaffold
-│   │   │       ├── index.py        # Part C / BM25 scaffold
-│   │   │       └── answerer.py     # Part E / A1 scaffold
+│   │   │       ├── types.py        # Shared internal RagResult & RagPath types
+│   │   │       ├── chunker.py      # Part C Markdown chunking & metadata
+│   │   │       ├── index.py        # Part C BM25, TF-IDF, and Hybrid retrieval
+│   │   │       └── answerer.py     # Part E RagAnswerer, A1 abstain & fallback
 │   │   └── assistant_api/
 │   │       ├── __init__.py
 │   │       ├── main.py
@@ -93,7 +105,13 @@ assistant-core-team3/
 │   │       ├── weather.py
 │   │       └── ratelimit.py
 │   └── tests/
-│       ├── test_rag.py             # Lab 06 test scaffold; no tests yet
+│       ├── test_rag.py             # Lab 06 end-to-end RAG, CLI & API tests
+│       ├── test_rag_retrieval.py   # Part C chunker & retrieval tests
+│       ├── test_llm_grounding.py   # Part D / A2 grounding & adapter tests
+│       ├── test_rag_answerer.py    # Part E / A1 abstain & fallback tests
+│       ├── test_privacy_guard.py   # Privacy guardrail tests
+│       ├── test_eval_cases.py      # H1 25-case dataset validation tests
+│       ├── test_compare_paths.py   # Part F comparison runner tests
 │       ├── api/                    # Existing API and persistence tests
 │       └── ...                     # Existing Lab 03–05 unit tests
 ├── public_materials/
@@ -136,25 +154,36 @@ python -m pytest -q
 python -m ruff check .
 ```
 
-The focused Lab 05 checks are:
+The focused Lab 05 and Lab 06 checks are:
 
 ```bash
 python -m pytest -q tests/api/test_add_feedback.py tests/api/test_api.py tests/test_db.py
+python -m pytest -q tests/test_rag.py
+python -m pytest -q tests/test_rag.py -k citation
+python -m pytest -q practice/test_mini_search.py
+python eval/compare_paths.py
 ```
 
-## Lab 06 Scaffold
+## Lab 06 Deliverables
 
-The project structure follows the Lab 03–06 guide while retaining the existing
-Lab 03–05 source, tests, data, SQL, and scripts. The sample Markdown knowledge
-base and `answer_v1.txt` are copied unchanged from `public_materials/lab06/starter/`;
-the prompt is included as package data when the project is built.
+The Lab 06 RAG pipeline is integrated into `assistant_core_lab/` while keeping all Lab 03–05
+deterministic features, API schemas, rate limiting, and SQLite persistence intact.
 
-`guard.py`, `llm.py`, `rag/`, `eval/compare_paths.py`, and `tests/test_rag.py`
-contain scaffolding only. They are not connected to the service or API yet.
-`eval/cases.jsonl` is empty and still needs the guide's 25 + 5 reviewed questions.
-The report template is in `assistant_core_lab/docs/lab6/path_comparison.md`.
-Run the existing checks above to check for regressions; they do not validate
-the pending Lab 06 functionality.
+- **S1–S3 Warm-up:** `practice/mini_search.py` and `practice/test_mini_search.py` implement the inverted index and keyword ranking baseline.
+- **Part C — Knowledge Base & Retrieval:** `src/assistant_core/rag/chunker.py` and `index.py` load the 14 Markdown chunks from `data/kb/` with provenance metadata and provide BM25, TF-IDF, and Hybrid retrieval.
+- **Part D — LLM & A2 Grounding:** `src/assistant_core/llm.py` and `prompts/answer_v1.txt` provide the offline `StubLLM`, optional Ollama/OpenAI-compatible adapters, strict JSON schema validation, and A2 citation verification against retrieved IDs.
+- **Part E — A1 Abstention, Privacy & Fallback:** `src/assistant_core/guard.py` and `rag/answerer.py` block third-party private requests before retrieval, abstain when evidence is missing or below `RETRIEVAL_MIN_SCORE=2.0`, retry once on provider/grounding failure, and fall back safely to the top retrieved chunk (`degraded=True`).
+- **Service, CLI & FastAPI Integration:** `create_service(settings)` keeps `RAG_ENABLED=false` by default for Lab 03–05 contract compatibility. Set `RAG_ENABLED=true` (with offline `LLM_PROVIDER=stub` by default) to run RAG across both CLI and FastAPI:
+
+```bash
+# Windows PowerShell (from assistant_core_lab/)
+$env:RAG_ENABLED="true"; python -m assistant_core "I lost my student card"
+
+# macOS/Linux (from assistant_core_lab/)
+RAG_ENABLED=true python -m assistant_core "I lost my student card"
+```
+
+- **Part F, H1 & H2:** `eval/cases.jsonl` contains 25 cases (20 starter + 5 H1: 3 grounded normal + 2 abstention). `eval/compare_paths.py` compares the deterministic, retrieval, and LLM paths on the same 25 cases; results, three-sentence recommendation, failure analysis, and the 5-line H2 reflection are documented in `docs/lab6/path_comparison.md` alongside per-member evidence under `docs/lab6/members/`.
 
 ## Run the API
 
@@ -219,7 +248,7 @@ Use a dedicated branch and pull request for each task. Before merging or submitt
 run the full test suite and Ruff, review the changed files, and confirm that the
 integrated implementation under `assistant_core_lab/` is the source of truth.
 
-The Lab 05 release tag is created separately after the final review and merge.
+The Lab 06 release tag (`v0.6-ai`) is created separately after the final review and merge.
 
 **Course:** CSC10014 — Practical Track
 
