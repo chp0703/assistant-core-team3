@@ -41,3 +41,11 @@ Both runs use shared routing, so they measure more than my isolated index. Retri
 3. The offline StubLLM did not improve accuracy over retrieval here. Shared A2 validates that cited IDs came from retrieved hits; it cannot prove every sentence is true.
 
 The shared A1 [`RagAnswerer`](../../../../src/assistant_core/rag/answerer.py) abstains before generation for missing or low-score hits and blocks private requests before model use. Shared A2 [`parse_draft`](../../../../src/assistant_core/llm.py) validates structured output and rejects missing or unretrieved citations on non-abstaining answers. I learned that finding useful chunks is only one part of the pipeline; routing and evidence checks still need improvement. These 25 offline cases do not show how a live model would behave.
+
+## H2 — Reflection (5 Lines)
+
+1. RAG is like an open-book exam: our BM25 search engine first locates the most relevant paragraphs from the faculty's official Markdown documents.
+2. Only those retrieved chunks and the student's question are passed to the language model, so it writes answers from real handbook text instead of memory.
+3. When retrieval finds no chunk above the minimum score (`RETRIEVAL_MIN_SCORE=2.0`), our code abstains before calling the model rather than letting it guess.
+4. Our code checks two things the model does not guarantee on its own: valid JSON schema and A2 grounding confirming every cited ID belongs to the retrieved chunks.
+5. Even with grounding checks, good retrieval and routing remain essential because bad chunks or wrong routes still lead to incomplete answers.

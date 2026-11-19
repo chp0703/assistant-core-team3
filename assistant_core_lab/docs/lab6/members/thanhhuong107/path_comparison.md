@@ -88,11 +88,18 @@ python -m ruff check .
 The full suite reports one existing Starlette/AnyIO `BlockingPortal` deprecation
 warning. It does not affect the H1 assertions or test result.
 
+## H2 — Reflection (5 Lines)
+
+1. RAG is like taking an open-book exam: the assistant first searches our handbook and campus service documents to pull out the relevant section before answering.
+2. The language model receives only that retrieved passage and the student's question, so it phrases a clear reply from official text rather than guessing from memory.
+3. Testing with our five new H1 cases (`E21`–`E25`) shows how privacy checks and A1 abstention block sensitive or out-of-scope questions before calling the model.
+4. Unlike the model itself, our code strictly verifies JSON structure and A2 citation grounding — rejecting any answer that cites a source ID not present in the retrieved chunks.
+5. Keeping the H1 expected labels unchanged also exposed how deterministic router rules (`E23`) can intercept a valid RAG question before search runs.
+
 ## Limits and handoff
 
 - The dataset has 25 cases and uses a deterministic stub, so the results do not
   estimate real-model accuracy.
 - The shared Part F report remains the canonical team comparison; this table is
   Thanh Hương's individual evidence using the same runner and cases.
-- The team lead still needs to confirm whether shared A1/A2 implementation plus
-  individual evidence satisfies the teacher's per-member submission requirement.
+- Team release verification on 2026-11-19 confirmed the full suite passes (`361 passed`, Ruff pass) with `H2` reflection added across all member reports.

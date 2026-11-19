@@ -49,3 +49,17 @@ Latency varies from run to run. In an earlier run the LLM path had a maximum of 
 - 25 cases and a stub LLM, so the accuracy numbers do not say how a real model behaves.
 - Labels were not changed to improve results.
 - Raising `RETRIEVAL_MIN_SCORE` could fix E19 but may break correct retrievals; it was not tuned here.
+
+## Recommendation (Three Sentences)
+
+1. For official handbook questions right now, we would ship the **retrieval** path (with deterministic rules for fees and offices) and only enable a real LLM after benchmarking it on the same cases.
+2. Retrieval raises accuracy from `9/25` to `20/25` in under `1 ms`, cites verified document paragraphs directly without risking hallucinated rules, and adds no external model cost or latency variance.
+3. The first failure we would fix is router keyword precedence on `E13`, `E15`, and `E23` (so regulation questions mentioning `tuition` or `library` reach retrieval instead of deterministic Fee/Office handlers), followed by plural normalization (`credits` → `credit`) for `E14`.
+
+## H2 — Reflection (5 Lines)
+
+1. RAG works like an open-book exam: instead of answering from memory, the assistant first searches our official handbook and service documents for the most relevant section.
+2. It then hands that retrieved passage and the student's question to the language model so the model only phrases an answer based on the given text.
+3. When the search finds no relevant passage above the minimum score, our code stops before calling the model and politely says it cannot answer instead of letting the AI guess.
+4. Our code also validates the model's JSON structure and enforces the A2 grounding check — verifying that every cited `source_id` actually belongs to the chunks we retrieved, which the model itself does not guarantee.
+5. If validation fails or the provider goes down, the assistant retries once and falls back to quoting the original retrieved document safely.

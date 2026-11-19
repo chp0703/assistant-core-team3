@@ -74,27 +74,41 @@ A2 checks citation membership, not whether every assertion is semantically
 supported by that citation. Model confidence is not a calibrated probability.
 The prompt's 80-word instruction is not a semantic correctness guarantee.
 
-## Three-path comparison: pending integration
+## Three-path comparison (post-integration)
 
-| Path | Measured correct / total | Correct abstentions | p50 / max latency | Status |
+After Part C (#58), Part D (#56), Part E (#60), H1 (#55), Stage 3 service integration (#61),
+and Part F (#63) merged into `main`, all three paths were measured on the shared 25 cases
+(`eval/cases.jsonl`, `RETRIEVAL_MIN_SCORE=2.0`, offline `StubLLM`).
+
+Canonical Part F run ([`../../path_comparison.md`](../../path_comparison.md), 2026-11-16):
+
+| Path | Correct / total | Correct abstentions | p50 latency | Max latency |
 | --- | --- | --- | --- | --- |
-| Deterministic | Not measured | Not measured | Not measured | Comparison adapter pending |
-| Retrieval | Not measured | Not measured | Not measured | Part C / Part E pending |
-| LLM (stub) | Not measured | Not measured | Not measured | A2 unit-tested; full path pending |
+| Deterministic | 9 / 25 | 7 / 7 | 0.05 ms | 0.75 ms |
+| Retrieval | 20 / 25 | 6 / 7 | 0.10 ms | 0.27 ms |
+| LLM (stub) | 20 / 25 | 6 / 7 | 0.57 ms | 1.37 ms |
 
-`eval/compare_paths.py` is still a scaffold at this base. No comparison run or
-failure list is claimed, and no example numbers from the PDF are reused.
-After Part C, Part E, service integration and H1 merge, rerun the three paths on
-the same 25 questions (20 original + 5 H1), then replace this table and write the
-three observations from the actual results.
+Team release verification rerun on 2026-11-19 (`Python 3.12.2`, `StubLLM` offline, full suite `361 passed`, `ruff check .` pass):
 
-The PDF (page 18) requires each member's PR to include A1-A2 and a comparison
-table. This Part D PR alone does not establish that the individual submission
-requirement is met. The team lead must confirm whether evidence from the shared
-implementation is sufficient or each branch needs its own implementation.
-S1-S3 practice evidence is also not established by this Part D change.
+| Path | Correct / total | Correct abstentions | p50 latency | Max latency |
+| --- | --- | --- | --- | --- |
+| Deterministic | 9 / 25 | 7 / 7 | 0.02 ms | 0.57 ms |
+| Retrieval | 20 / 25 | 6 / 7 | 0.03 ms | 0.07 ms |
+| LLM (stub) | 20 / 25 | 6 / 7 | 0.18 ms | 0.64 ms |
 
-## H2 reflection draft (five lines)
+Failed cases:
+
+- Deterministic: `E01 E02 E05 E06 E07 E08 E09 E10 E11 E12 E13 E14 E15 E21 E22 E23`
+- Retrieval: `E13 E14 E15 E19 E23`
+- LLM (stub): `E13 E14 E15 E19 E23`
+
+Observations:
+
+1. Retrieval raises accuracy from `9/25` to `20/25` because the deterministic path only answers Fee, Office, and Greeting requests and abstains on every regulation question.
+2. With the offline `StubLLM`, the LLM path matches retrieval (`20/25`) while `parse_draft` enforces strict JSON schema validation and A2 citation membership against retrieved IDs at sub-millisecond overhead.
+3. All five remaining failures come from router precedence (`E13` tuition, `E15`/`E23` library) and BM25 lexical scoring (`E14` plural mismatch, `E19` exam chunk above threshold) rather than A2 grounding.
+
+## H2 reflection (five lines)
 
 1. RAG is like an open-book exam: the assistant first finds a relevant passage in our documents.
 2. It gives that passage and the question to the language model to phrase an answer.

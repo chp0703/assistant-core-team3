@@ -1,10 +1,9 @@
 # Hùng — Part E / A1: implementation and test evidence
 
-Date: 2026-11-14. Branch: `feat/lab06-abstain-a1`.
+Date: 2026-11-14 (post-integration comparison & H2 updated 2026-11-19). Branch: `feat/lab06-abstain-a1` (merged in PR #60).
 
-This is module-level evidence and an integration handoff. The official three-path
-comparison on the shared 25 cases is still pending; this document does not claim
-that the individual submission or the integrated Lab 06 release is complete.
+This document records Part E / A1 module-level evidence, integration handoff, and
+the post-integration three-path comparison on the shared 25 cases.
 
 ## Scope
 
@@ -107,14 +106,49 @@ potentially sensitive route. Existing `tools.py` does not yet expose the starter
 `run_tool_call`; the optional callback needs a validated implementation before
 enabling model-requested tools. Deterministic Fee handling stays in the service.
 
-## Remaining acceptance work
+## Three-path comparison (post-integration)
 
-- Merge/reconcile the C/D dependency PRs, then rerun this branch without skips.
-- Phát integrates service/CLI/API and runs regression; RAG remains disabled by default.
-- Hương supplies 20+5 official cases; Khôi runs the three paths on the same set.
-- Fill the actual comparison table, three observations and failure analysis here
-  after those measurements exist. No latency/accuracy numbers are invented.
-- Team lead confirms the teacher's individual A1–A2/comparison PR requirements.
+After Part C (#58), Part D (#56), Part E (#60), H1 (#55), Stage 3 service integration (#61),
+and Part F (#63) merged into `main`, all three paths were evaluated on the shared 25 cases
+(`eval/cases.jsonl`, `RETRIEVAL_MIN_SCORE=2.0`, offline `StubLLM`).
+
+Canonical Part F run ([`../../path_comparison.md`](../../path_comparison.md), 2026-11-16):
+
+| Path | Correct / total | Correct abstentions | p50 latency | Max latency |
+| --- | --- | --- | --- | --- |
+| Deterministic | 9 / 25 | 7 / 7 | 0.05 ms | 0.75 ms |
+| Retrieval | 20 / 25 | 6 / 7 | 0.10 ms | 0.27 ms |
+| LLM (stub) | 20 / 25 | 6 / 7 | 0.57 ms | 1.37 ms |
+
+Team release verification rerun on 2026-11-19 (`Python 3.12.2`, `StubLLM` offline, full suite `361 passed`, `ruff check .` pass):
+
+| Path | Correct / total | Correct abstentions | p50 latency | Max latency |
+| --- | --- | --- | --- | --- |
+| Deterministic | 9 / 25 | 7 / 7 | 0.02 ms | 0.57 ms |
+| Retrieval | 20 / 25 | 6 / 7 | 0.03 ms | 0.07 ms |
+| LLM (stub) | 20 / 25 | 6 / 7 | 0.18 ms | 0.64 ms |
+
+Failed cases:
+
+- Deterministic: `E01 E02 E05 E06 E07 E08 E09 E10 E11 E12 E13 E14 E15 E21 E22 E23`
+- Retrieval: `E13 E14 E15 E19 E23`
+- LLM (stub): `E13 E14 E15 E19 E23`
+
+Observations:
+
+1. Privacy guard and A1 abstention correctly block `6/7` abstention cases (`E16`, `E17`, `E18`, `E20`, `E24`, `E25`) before any model generation; deterministic's `7/7` reflects abstaining on every regulation query.
+2. Retrieval and `StubLLM` both lift overall accuracy from `9/25` to `20/25` because `RagAnswerer` grounds answers on the same top BM25 hits and falls back cleanly on provider errors.
+3. The only abstention miss (`E19`) happens because BM25 scores an exam-absence chunk above `2.0`, while `E13`, `E15`, and `E23` are intercepted by deterministic Fee/Office routing and `E14` is a BM25 ranking miss.
+
+## H2 — Reflection (5 Lines)
+
+1. RAG acts like an open-book exam where the assistant searches official documents first and only then asks the model to explain the matching section.
+2. Before the model is ever called, our code runs privacy guardrails and A1 abstention so sensitive or unsupported questions are refused immediately instead of guessed.
+3. Giving the model retrieved chunks keeps its answer tied to current faculty rules rather than outdated training memory.
+4. Unlike the language model itself, our code enforces strict JSON validation, checks via A2 that every cited ID came from the retrieved chunks, and retries once on failure.
+5. If validation still fails or the provider is unavailable, `RagAnswerer` safely falls back to quoting the original retrieved chunk with `degraded=True`.
+
+## Limits and notes
 
 The privacy guard is a small lexical heuristic: it cannot recognize every name,
 paraphrase or language, and conservatively rejects standalone eight-digit IDs.
