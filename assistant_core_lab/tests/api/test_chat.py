@@ -49,7 +49,9 @@ def test_chat_preserves_service_response(chat_client, service, monkeypatch):
     assert response.status_code == 200
     body = response.json()
     request_id = body.pop("request_id")
+    escalate = body.pop("escalate")
     assert re.fullmatch(r"[0-9a-f]{12}", request_id)
+    assert escalate is False
     assert body == result.model_dump(mode="json")
 
 
@@ -115,15 +117,24 @@ def test_chat_rag_enabled_preserves_schema_privacy_and_deterministic_routes(sett
         kb_res = client.post("/v1/chat", json={"message": "I lost my student card"})
         assert kb_res.status_code == 200
         kb_body = kb_res.json()
-        assert set(kb_body) == {"answer", "intent", "sources", "degraded", "request_id"}
+        assert set(kb_body) == {"answer", "intent", "sources", "degraded", "escalate", "request_id"}
         assert kb_body["intent"] == "rule"
+        assert kb_body["escalate"] is False
         assert [source["id"] for source in kb_body["sources"]] == ["S26#3"]
+
+        oos_res = client.post("/v1/chat", json={"message": "what is the capital of France"})
+        assert oos_res.status_code == 200
+        assert oos_res.json()["intent"] == "unknown"
+        assert oos_res.json()["sources"] == []
+        assert oos_res.json()["escalate"] is True
 
         privacy_res = client.post("/v1/chat", json={"message": "what grade did my friend get"})
         assert privacy_res.status_code == 200
         assert privacy_res.json()["intent"] == "unknown"
         assert privacy_res.json()["sources"] == []
+        assert privacy_res.json()["escalate"] is False
 
         fee_res = client.post("/v1/chat", json={"message": "tuition for 18 credits and 2 retake"})
         assert fee_res.status_code == 200
         assert fee_res.json()["intent"] == "fee" and "9,450,000 VND" in fee_res.json()["answer"]
+        assert fee_res.json()["escalate"] is False
