@@ -22,6 +22,7 @@ class ChatResponse(BaseModel):
     intent: Intent
     sources: list[Source] = []
     degraded: bool = False
+    escalate: bool = False
     request_id: str
 
 

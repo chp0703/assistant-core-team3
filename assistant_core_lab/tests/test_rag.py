@@ -258,6 +258,7 @@ async def test_cli_and_fastapi_share_rag_configuration_and_persist_interactions(
         assert api_res.status_code == 200
         body = api_res.json()
         request_id = body.pop("request_id")
+        assert body.pop("escalate") is False
         assert re.fullmatch(r"[0-9a-f]{12}", request_id)
         assert body == cli_response.model_dump(mode="json")
 
@@ -268,6 +269,7 @@ async def test_cli_and_fastapi_share_rag_configuration_and_persist_interactions(
         assert abstain_res.status_code == 200
         abstain_body = abstain_res.json()
         assert abstain_body["intent"] == "unknown" and abstain_body["sources"] == []
+        assert abstain_body["escalate"] is True
 
         fb_res = await client.post("/v1/feedback", json={"request_id": request_id, "rating": 1})
         assert fb_res.status_code == 201

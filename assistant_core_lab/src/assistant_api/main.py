@@ -86,7 +86,13 @@ def create_app(
         if not limiter.allow(client_ip):
             raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Rate limit exceeded")
         start = time.perf_counter()
-        resp = service.handle(Message(text=req.message, session_id=req.session_id))
+        msg = Message(text=req.message, session_id=req.session_id)
+        if getattr(service.handle, "__func__", None) is AssistantService.handle:
+            resp, rag_result = service.handle_with_rag_result(msg)
+            escalate = bool(rag_result.escalate) if rag_result is not None else False
+        else:
+            resp = service.handle(msg)
+            escalate = False
         request_id = uuid.uuid4().hex[:12]
         repo.record_interaction(
             req.session_id,
@@ -97,7 +103,7 @@ def create_app(
             degraded=resp.degraded,
             latency_ms=round((time.perf_counter() - start) * 1000, 2),
         )
-        return ChatResponse(**resp.model_dump(), request_id=request_id)
+        return ChatResponse(**resp.model_dump(), escalate=escalate, request_id=request_id)
 
     @app.post(
         "/v1/feedback",
