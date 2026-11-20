@@ -25,7 +25,8 @@ where = ["src"]
 assistant_core = ["prompts/*.txt"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src", "practice"]
+pythonpath = [".", "src", "practice"]
+testpaths = ["tests", "practice/test_mini_search.py"]
 
 [tool.ruff]
 line-length = 120
