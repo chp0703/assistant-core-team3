@@ -4,6 +4,7 @@ from __future__ import annotations
 from ui.api_client import ChatResult
 
 WELCOME = ("Hi! I can answer questions about fees, offices and the student handbook. "
+           "Ask one question at a time. "
            "Try: “Can I register my thesis with 118 credits?”")
 EXAMPLES = ["Can I register my thesis with 118 credits?", "Tuition for 18 credits and 2 retake",
             "Where is the library?", "I lost my student card"]
