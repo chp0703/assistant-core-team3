@@ -37,7 +37,29 @@ class AssistantClient:
             return ChatResult(ok=False, error="Too many questions in a short time. Please wait a minute.")
         if r.status_code != 200:
             return ChatResult(ok=False, error=f"Something went wrong on our side (error {r.status_code}).")
-        d = r.json()
+        try:
+            d = r.json()
+        except ValueError:
+            return ChatResult(ok=False, error="The assistant returned an invalid response. Please try again.")
+        if not isinstance(d, dict):
+            return ChatResult(ok=False, error="The assistant returned an invalid response. Please try again.")
+        sources = d.get("sources", [])
+        if (
+            not isinstance(d.get("answer"), str)
+            or not isinstance(d.get("intent"), str)
+            or not isinstance(d.get("request_id"), str)
+            or not isinstance(sources, list)
+            or any(
+                not isinstance(source, dict)
+                or not isinstance(source.get("id"), str)
+                or not isinstance(source.get("title"), str)
+                for source in sources
+            )
+            or not isinstance(d.get("path", ""), str)
+            or not isinstance(d.get("escalate", False), bool)
+            or not isinstance(d.get("degraded", False), bool)
+        ):
+            return ChatResult(ok=False, error="The assistant returned an invalid response. Please try again.")
         return ChatResult(ok=True, answer=d["answer"], intent=d["intent"], sources=d.get("sources", []),
                           path=d.get("path", ""), escalate=d.get("escalate", False),
                           degraded=d.get("degraded", False), request_id=d["request_id"])
