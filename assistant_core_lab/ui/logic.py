@@ -20,17 +20,26 @@ def validate_input(text: str) -> str | None:
 
 
 def format_sources(sources: list[dict]) -> str:
-    """'Sources: H26#5.3 — 5.3 Thesis registration' or '' if none."""
-    # TODO L1 (3 lines): return "" if there are no sources, otherwise
-    #   "Sources: " + "; ".join(f"{s['id']} — {s['title']}" for s in sources)
-    raise NotImplementedError("L1")
+    """Format source entries into a single-line citation string."""
+    parts: list[str] = []
+    for entry in sources:
+        source_id = entry.get("id", "")
+        title = entry.get("title", "")
+        if source_id and title:
+            parts.append(f"{source_id} — {title}")
+        elif source_id:
+            parts.append(source_id)
+        elif title:
+            parts.append(title)
+    if not parts:
+        return ""
+    return "Sources: " + "; ".join(parts)
 
 
 def status_note(result: ChatResult) -> str | None:
-    """A short note shown under the answer, explaining special situations."""
-    # TODO L2 (5 lines):
-    #   if result.escalate ->
-    #       "I could not find this in the official documents. A staff member can help: Training Office, room I.101."
-    #   elif result.degraded -> "Shown directly from the source document (the AI helper was unavailable)."
-    #   else -> None
-    raise NotImplementedError("L2")
+    """Return a status note for escalated or degraded chat results."""
+    if result.escalate:
+        return "I could not find this in the official documents. A staff member can help: Training Office, room I.101."
+    if result.degraded:
+        return "Shown directly from the source document (the AI helper was unavailable)."
+    return None
