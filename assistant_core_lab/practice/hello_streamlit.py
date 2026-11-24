@@ -22,7 +22,7 @@ if name.strip():
 if "count" not in st.session_state:
     st.session_state.count = 0
 if st.button("Click me"):
-    pass  # TODO U3: add 1 to st.session_state.count
+    st.session_state.count += 1
 st.write(f"Clicked {st.session_state.count} times")
 
 # U4: validation — show an error for a bad number of credits
