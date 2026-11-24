@@ -27,5 +27,7 @@ st.write(f"Clicked {st.session_state.count} times")
 
 # U4: validation — show an error for a bad number of credits
 credits = st.number_input("Credits this semester", min_value=0, max_value=40, value=18, step=1)
-# TODO U4: if credits > 30 show st.error("More than 30 credits needs advisor approval."),
-#          otherwise show st.info(f"{credits} credits is a normal load.")
+if credits > 30:
+    st.error("More than 30 credits needs advisor approval.")
+else:
+    st.info(f"{credits} credits is a normal load.")
