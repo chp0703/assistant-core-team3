@@ -12,3 +12,9 @@ Owner: @thanhhuong107 · Checked on: 2026-11-23
 - [x] The page says it is an AI assistant
 - [x] Text is readable (size, contrast); buttons have clear labels
 - [x] Works on a phone-width window
+
+## Verification evidence
+
+- `python -m pytest -q tests/test_ui.py tests/test_ui_app.py tests/test_api_client.py`: 42 passed.
+- Browser check at a 390 × 844 viewport: no horizontal overflow (`innerWidth = scrollWidth = 390`); heading, backend error, welcome message and input label remained readable.
+- Source inspection confirmed the `Thinking…` spinner, example questions and AI disclosure on the first screen.
