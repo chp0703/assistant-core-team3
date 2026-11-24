@@ -66,3 +66,14 @@ def test_backend_down_shows_error(client):
     client.healthy.return_value = False
     at = AppTest.from_file(APP).run()
     assert len(at.error) == 1
+
+
+@pytest.mark.parametrize("key, rating", [("up2", 1), ("down2", -1)])
+def test_failed_feedback_is_not_reported_as_success(client, key, rating):
+    client.send_feedback.return_value = False
+    at = asked(client)
+    at.button(key=key).click().run()
+    client.send_feedback.assert_called_once_with("req-1", rating)
+    assert at.session_state.rated == set()
+    assert [t.value for t in at.toast] == ["Could not send your feedback. Please try again."]
+    assert {"up2", "down2"} <= {b.key for b in at.button}   # buttons stay so the user can retry

@@ -47,14 +47,14 @@ for i, m in enumerate(st.session_state.messages):
         rid = m.get("request_id")
         if rid and rid not in st.session_state.rated:
             c1, c2, _ = st.columns([1, 1, 6])
-            if c1.button("👍", key=f"up{i}"):
-                client.send_feedback(rid, 1)
-                st.session_state.rated.add(rid)
-                st.toast("Thanks for your feedback!")
-            if c2.button("👎", key=f"down{i}"):
-                client.send_feedback(rid, -1)
-                st.session_state.rated.add(rid)
-                st.toast("Thanks — we will look at this answer.")
+            for col, icon, rating, thanks in ((c1, "👍", 1, "Thanks for your feedback!"),
+                                              (c2, "👎", -1, "Thanks — we will look at this answer.")):
+                if col.button(icon, key=f"{'up' if rating > 0 else 'down'}{i}"):
+                    if client.send_feedback(rid, rating):
+                        st.session_state.rated.add(rid)
+                        st.toast(thanks)
+                    else:   # not saved: keep the buttons so the user can retry
+                        st.toast("Could not send your feedback. Please try again.")
 
 # ---- new question ----------------------------------------------------------------
 question = st.chat_input("Ask about fees, offices or the handbook…") or st.session_state.pop("pending", None)
