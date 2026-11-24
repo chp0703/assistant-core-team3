@@ -1,4 +1,4 @@
-name: Lab 03 - Assistant Core CI
+name: Assistant Core CI
 
 on:
   push:
@@ -44,3 +44,7 @@ jobs:
 
       - name: Run unit tests with pytest
         run: python -m pytest -q
+
+      - name: Run Lab 07 warm-up tests (U1-U4)
+        working-directory: assistant_core_lab/practice
+        run: python -m pytest -q test_hello_streamlit.py
