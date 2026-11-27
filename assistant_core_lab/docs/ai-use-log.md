@@ -137,3 +137,12 @@ The additional three tests in the integrated suite belong to the knowledge modul
 - Evidence: old member branch 6b51fbb passes Ruff but pytest collection fails on missing DataError. Repaired integration: 121 pytest tests pass; full Ruff passes, using pinned requirements and Python 3.12.14.
 - Publication at verification time: local edits only. The owner subsequently authorized updating existing PR #9 / issue #6. The PR branch was synchronized with main; the architecture conflict was resolved using member 6's saved document. Remote CI success is not claimed in this entry.
 - Authorship: Codex prepared the technical review. Hùng must inspect the diff and confirm the review before submitting it as personal manual review. Historical prompts/actions not supplied by Hùng are not invented.
+
+## 2026-11-27 — chp0703: Lab 08 H1/H2 preparation
+
+- Tool: OpenAI Codex.
+- H1 candidate: `AssistantService._execute` in `src/assistant_core/service.py`, selected from Phát-owned code in PR #61 / commit `d3303bc787ec17532b574fc7c280f7d01142920`; the assigned `route()` candidate was excluded because its implementation history belongs to Khang.
+- Provenance limit: the earlier chp0703 AI-use entry lists `service.py` for the Lab 3 Help feature, but does not explicitly tie the later `_execute` function to AI generation. The report records that distinction instead of asserting unverified authorship.
+- Generated or modified: `tests/test_h1_phat.py`, `docs/lab8/members/chp0703/h1_result.md`, and an AI-assisted draft at `docs/lab8/members/chp0703/h2_reflection.md`. No production source was changed for H1 because the tested behavior passed.
+- Verification: from `assistant_core_lab/`, `.\.venv\Scripts\python.exe -m pytest -q tests/test_h1_phat.py` — 8 passed.
+- Personal review required: Phát must confirm exact H1 AI provenance and revise/approve the H2 wording as a personal reflection before submission.
