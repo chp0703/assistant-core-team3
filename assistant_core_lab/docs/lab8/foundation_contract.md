@@ -66,7 +66,7 @@ The runner baseline was executed after the compatibility adapter change; its two
 
 - H1 files: `tests/test_h1_phat.py` and `docs/lab8/members/chp0703/h1_result.md`.
 - H1 targets `AssistantService._execute`, added by Phát in commit `d3303bc787ec17532b574fc7c280f7d01142920`. The earlier Codex AI-use entry names `service.py` for the Help work but does not identify this later function specifically. Khang's `route()` was excluded based on its Khang-owned history. The 8 H1 test instances pass without a production change. **Phát must confirm the function's prior AI provenance before treating the H1 provenance requirement as satisfied.**
-- H2 file: `docs/lab8/members/chp0703/h2_reflection.md`. It contains exactly two English sentences as an AI-assisted draft based on the current RAG prompt/parser and observed injection failures. Phát must review and make it his own reflection; it does not claim that he personally read or tested anything.
+- H2 file: `docs/lab8/members/chp0703/h2_reflection.md`. It contains exactly two English sentences, with the assigned pytest and OWASP readings linked. The wording is explicitly hypothetical (“I would test”); it does not claim that Phát personally ran the attack. Codex assistance is disclosed in `docs/ai-use-log.md`.
 - `docs/ai-use-log.md` records the work, evidence, and provenance limits without inventing authorship.
 
 ## Scope boundary

@@ -2,7 +2,7 @@
 
 - Member: `chp0703`
 - Source file / signature: `src/assistant_core/service.py`, `AssistantService._execute(self, text: str) -> tuple[Response, RagResult | None]`
-- Earlier AI-use log entry / PR / commit: The Lab 3 entry in `docs/ai-use-log.md` lists `service.py` among Codex-assisted Help files. PR #61 / commit `d3303bc787ec17532b574fc7c280f7d01142920` shows Phát added the current `_execute` implementation. The earlier log does not identify this later function specifically, so exact AI provenance still needs Phát's confirmation.
+- Earlier AI-use log entry / PR / commit: Phát's AI-use log was added in commit `677630d` (2026-10-23) and lists `service.py` among Codex-assisted Help files. Phát added `_execute` later in commit `d3303bc787ec17532b574fc7c280f7d01142920` (2026-11-16). The earlier file-level entry does not prove that Codex wrote this later function, so the function-level H1 provenance requirement is **not verified**.
 - What was originally generated or modified: PR #61 added the RAG-aware service execution path that checks recognized privacy requests before routing, then returns a public response and optional internal `RagResult`.
 - Current contract: `_execute` accepts request text, dispatches deterministic greeting/fee/office behavior, uses RAG for rule requests when enabled, and returns `(Response, RagResult | None)`. Public message length and blank-input validation belong to the `Message`/API boundary.
 - Test file: `tests/test_h1_phat.py`
@@ -20,6 +20,6 @@
 - Defect / root cause: No behavior defect found in the tested cases.
 - Fix or replacement: None; changing the production function was not warranted.
 - After local commit / command / actual result: Implementation and H1 artifacts are in `58273bbb76748b974e4471017c18ee15cc16827c`; the runner's safe report-path follow-up is `8baddb279e12d6282427de36920d8d2e5296d7bb`. After both commits, `python -m pytest -q -ra` from `assistant_core_lab/` passed **420 tests** (one existing Starlette/AnyIO deprecation warning), including all 8 H1 test instances.
-- Decision: Retain the function behavior. The tests establish the listed behavior, but the exact historical AI attribution for `_execute` remains **NOT VERIFIED** until Phát confirms it.
+- Decision: Retain the function behavior. The tests establish the listed behavior, but the available repository history does not establish that `_execute` was AI-written. This is an explicit H1 provenance gap, not a passing provenance claim.
 - Remaining limitations: This targets an internal service method; the large/empty cases bypass the public `Message` validation intentionally to test the method boundary. It does not test G1 injection behavior.
-- Required disclosure and member verification: Codex created these tests and this report. Phát must confirm whether `_execute` is eligible for his prior AI-written-function H1 and review the results before submission.
+- Required disclosure: Codex created these tests and this report. The function was selected because its implementation commit belongs to Phát and Khang's `route()` was excluded; no claim is made that function-level AI authorship has been proven.

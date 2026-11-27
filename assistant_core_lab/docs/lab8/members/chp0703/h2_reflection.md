@@ -1,6 +1,2 @@
-# Lab 08 — H2 Reflection
-
-AI-assisted draft — Phát should review it for personal accuracy before submission.
-
-One indirect attack I would test is hiding an instruction in a retrieved handbook passage that tells the assistant to ignore the question and reveal unrelated private details.
-The assistant's RAG prompt labels source text as data and its parser restricts citations to retrieved IDs, but neither layer guarantees that the model will ignore every injected instruction.
+I would test an indirect prompt injection by hiding an instruction in a retrieved handbook passage for a tuition question and asking the assistant to reveal another student's private record ([OWASP LLM01](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)).
+Our RAG prompt labels retrieved passages as data and `parse_draft` rejects citations outside retrieved IDs, but those checks cannot ensure the model ignores malicious source text, so I would cover this case with an isolated pytest regression test ([pytest Get Started](https://docs.pytest.org/en/stable/getting-started.html)).
