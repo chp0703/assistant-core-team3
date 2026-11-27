@@ -19,6 +19,21 @@ def test_letter():
 
 
 # ---- your regression tests (one per bug report) -----------------------------
-# def test_bug1_average_empty(): ...
-# def test_bug2_top_n_returns_n(): ...
-# def test_bug3_add_grade_new_book_each_time(): ...
+def test_bug1_average_empty() -> None:
+    assert average([]) == 0.0
+
+
+def test_bug2_top_n_returns_n() -> None:
+    scores = {"Chi": 8, "Binh": 9, "An": 9, "Dung": 7}
+
+    assert top_n(scores, 3) == ["An", "Binh", "Chi"]
+    assert top_n(scores, 1) == ["An"]
+
+
+def test_bug3_add_grade_new_book_each_time() -> None:
+    first = add_grade("An", 8.0)
+    second = add_grade("Binh", 6.0)
+
+    assert first is not second
+    assert first == {"An": [8.0]}
+    assert second == {"Binh": [6.0]}
