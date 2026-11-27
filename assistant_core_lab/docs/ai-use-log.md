@@ -147,3 +147,18 @@ The additional three tests in the integrated suite belong to the knowledge modul
 - Verification: from `assistant_core_lab/`, `.\.venv\Scripts\python.exe -m pytest -q tests/test_h1_phat.py` — 8 passed.
 - H2 reading: Codex reviewed the assigned pytest Get Started and OWASP LLM01 pages and wrote two English sentences about an indirect injection in retrieved handbook text and the limits of this project's prompt/citation checks. The wording is hypothetical and does not claim that Phát personally read or ran this attack.
 - H1 provenance: the available log names `service.py` for an earlier Codex-assisted Help task, but predates the November 16 commit that added `_execute`; it is not function-level proof that Codex wrote `_execute`. This limitation remains explicit in `h1_result.md`.
+
+## 2026-11-27 - Hương (`thanhhuong107`): Lab 08 Part B and H1/H2
+
+- Tool: OpenAI Codex. Assisted with the three grade-utility fixes and their
+  regression tests, seven H1 cases for `setup_logging()`, and the H2 draft.
+- Part B: each added regression failed before its fix. The completed suite
+  passed 7/7, and temporarily removing the BUG-1 fix reproduced the failure.
+- H1: the Lab 03 entry above and the logging review record the earlier
+  Codex-assisted implementation. The seven H1 cases cover default setup,
+  reconfiguration, zero, a large integer, Vietnamese text, an empty level and
+  a wrong type. All passed on Python 3.12. See
+  [H1 results](lab8/members/thanhhuong107/h1_result.md).
+- H2: Codex consulted pytest Get Started and OWASP LLM01 and drafted two English
+  sentences about indirect prompt injection and reviewing knowledge-base
+  content before indexing. See [H2 reflection](lab8/members/thanhhuong107/h2_reflection.md).
