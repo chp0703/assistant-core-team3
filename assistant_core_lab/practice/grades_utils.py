@@ -21,8 +21,10 @@ def top_n(scores: dict[str, float], n: int) -> list[str]:
     return ranked[:n]
 
 
-def add_grade(name: str, grade: float, book: dict[str, list[float]] = {}) -> dict[str, list[float]]:
+def add_grade(name: str, grade: float, book: dict[str, list[float]] | None = None) -> dict[str, list[float]]:
     """Add a grade for `name` to a grade book and return the book. Without a book, start a NEW one."""
+    if book is None:
+        book = {}
     book.setdefault(name, []).append(grade)
     return book
 
