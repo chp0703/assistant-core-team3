@@ -21,3 +21,10 @@ def test_letter():
 # ---- your regression tests (one per bug report) -----------------------------
 def test_bug1_average_empty() -> None:
     assert average([]) == 0.0
+
+
+def test_bug2_top_n_returns_n() -> None:
+    scores = {"Chi": 8, "Binh": 9, "An": 9, "Dung": 7}
+
+    assert top_n(scores, 3) == ["An", "Binh", "Chi"]
+    assert top_n(scores, 1) == ["An"]

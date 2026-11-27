@@ -18,7 +18,7 @@ def average(scores: list[float]) -> float:
 def top_n(scores: dict[str, float], n: int) -> list[str]:
     """Names of the n best students, best first (ties: alphabetical)."""
     ranked = sorted(scores, key=lambda name: (-scores[name], name))
-    return ranked[: n - 1]
+    return ranked[:n]
 
 
 def add_grade(name: str, grade: float, book: dict[str, list[float]] = {}) -> dict[str, list[float]]:
