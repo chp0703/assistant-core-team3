@@ -11,6 +11,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
+import uuid
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -64,8 +66,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--report",
-        default=str(PROJECT_ROOT / "redteam" / "report.md"),
-        help="Markdown report destination (default: redteam/report.md)",
+        default=None,
+        help="Markdown report destination (default: a unique file in the system temp directory)",
     )
     return parser.parse_args()
 
@@ -142,9 +144,14 @@ def main() -> int:
         *rows,
     ]
     report_text = "\n".join(report) + "\n"
-    report_path = Path(args.report).resolve()
+    report_path = (
+        Path(args.report).resolve()
+        if args.report
+        else Path(tempfile.gettempdir()) / f"lab08-redteam-{uuid.uuid4().hex}.md"
+    )
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(report_text, encoding="utf-8")
+    print(f"Report written to: {report_path}", file=sys.stderr)
     print(report_text, end="")
     return 0 if passed == len(cases) else 1
 
