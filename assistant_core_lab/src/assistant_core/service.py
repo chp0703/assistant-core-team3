@@ -8,7 +8,7 @@ from time import perf_counter
 
 from assistant_core.config import Settings
 from assistant_core.errors import ConfigError, DataError, InvalidRequest, ProviderError
-from assistant_core.guard import PRIVATE_REPLY, is_private_request
+from assistant_core.guard import INJECTION_REPLY, PRIVATE_REPLY, is_private_request, looks_like_injection
 from assistant_core.knowledge import KnowledgeBase, load_knowledge
 from assistant_core.llm import LLM, make_llm
 from assistant_core.models import Intent, Message, Response, Source
@@ -98,9 +98,15 @@ class AssistantService:
         return response, rag_result
 
     def _execute(self, text: str) -> tuple[Response, RagResult | None]:
-        if self.rag is not None and is_private_request(text):
+        refusal = None
+        if looks_like_injection(text):
+            refusal = INJECTION_REPLY
+        elif self.rag is not None and is_private_request(text):
+            refusal = PRIVATE_REPLY
+
+        if refusal is not None:
             rag_result = RagResult(
-                answer=PRIVATE_REPLY,
+                answer=refusal,
                 intent=Intent.UNKNOWN,
                 path="abstain",
                 confidence=0.0,
