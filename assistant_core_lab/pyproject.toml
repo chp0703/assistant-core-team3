@@ -33,3 +33,7 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "BLE"]
+
+[tool.ruff.lint.per-file-ignores]
+# Temporary: BUG-3 intentionally seeds B006; Hương removes this when that bug is fixed.
+"practice/grades_utils.py" = ["B006"]

@@ -1,2 +1,1 @@
-I would test an indirect prompt injection by hiding an instruction in a retrieved handbook passage for a tuition question and asking the assistant to reveal another student's private record ([OWASP LLM01](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)).
-Our RAG prompt labels retrieved passages as data and `parse_draft` rejects citations outside retrieved IDs, but those checks cannot ensure the model ignores malicious source text, so I would cover this case with an isolated pytest regression test ([pytest Get Started](https://docs.pytest.org/en/stable/getting-started.html)).
+<!-- Phát: read the assigned pytest and OWASP pages, then write exactly two personal English sentences here. -->

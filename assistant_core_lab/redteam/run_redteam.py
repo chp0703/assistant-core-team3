@@ -72,6 +72,24 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _write_console(text: str) -> None:
+    """Write the report even when the Windows terminal encoding lacks Vietnamese glyphs."""
+    stream = sys.stdout
+    encoding = getattr(stream, "encoding", None) or "utf-8"
+    try:
+        payload = text.encode(encoding, errors="backslashreplace")
+    except LookupError:
+        encoding = "utf-8"
+        payload = text.encode(encoding)
+
+    buffer = getattr(stream, "buffer", None)
+    if buffer is not None:
+        buffer.write(payload)
+        buffer.flush()
+    else:
+        stream.write(payload.decode(encoding))
+
+
 def run_case(case: dict) -> tuple[bool, str]:
     """Run one case with a fresh in-memory database, service and TestClient."""
     data_dir = (PROJECT_ROOT / "data").resolve()
@@ -152,7 +170,7 @@ def main() -> int:
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(report_text, encoding="utf-8")
     print(f"Report written to: {report_path}", file=sys.stderr)
-    print(report_text, end="")
+    _write_console(report_text)
     return 0 if passed == len(cases) else 1
 
 
