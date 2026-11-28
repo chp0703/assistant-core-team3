@@ -1,0 +1,2 @@
+I’d try putting a fake instruction in a handbook passage the assistant retrieves for a tuition question, telling it to ignore the question and reveal another student’s record ([OWASP LLM01](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)).
+The prompt says retrieved passages are data and `parse_draft` rejects citations outside the retrieved IDs, but that does not stop the model from obeying a malicious passage, so I’d add this as a pytest regression case ([pytest Get Started](https://docs.pytest.org/en/stable/getting-started.html)).
