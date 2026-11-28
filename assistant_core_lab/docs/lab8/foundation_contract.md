@@ -18,7 +18,7 @@
 | `assistant_core_lab/tests/test_my_regressions.py` | Official regression template for Khang; only its starter greeting control is active. |
 | `assistant_core_lab/worksheets/bug_report_template.md`, `failure_catalogue.md`, `redteam_exchange.md` | Official worksheet copies for Khôi. |
 | `assistant_core_lab/tests/conftest.py` | Shared offline fixtures below. The narrower `tests/api/conftest.py` and its API fixture behavior are unchanged. |
-| `assistant_core_lab/docs/lab8/members/chp0703/` | Phát's H1 test/report; H2 path is reserved for Phát's personal reflection and remains pending. |
+| `assistant_core_lab/docs/lab8/members/chp0703/` | Phát's H1 test/report and the two-sentence H2 drafted by Codex at his request; AI authorship is disclosed in the log. |
 
 No active copy of the starter `src/`, API security tests, or other members' production files was added. No seeded bug, G1 guard, or Khang-owned `route()` implementation was changed.
 
@@ -66,9 +66,9 @@ The runner baseline was executed after the compatibility adapter change; its two
 
 - H1 files: `tests/test_h1_phat.py` and `docs/lab8/members/chp0703/h1_result.md`.
 - H1 targets `AssistantService._execute`, added by Phát in commit `d3303bc787ec17532b574fc7c280f7d01142920`. The earlier Codex AI-use entry names `service.py` for the Help work but does not identify this later function specifically. Khang's `route()` was excluded based on its Khang-owned history. The 8 H1 test instances pass without a production change. **Phát must confirm the function's prior AI provenance before treating the H1 provenance requirement as satisfied.**
-- H2 file: `docs/lab8/members/chp0703/h2_reflection.md` is an explicit placeholder. H2 remains incomplete until Phát reads the assigned pytest and OWASP pages and writes exactly two personal English sentences. The former AI-written text was removed after review feedback.
+- H2 file: `docs/lab8/members/chp0703/h2_reflection.md` contains two English sentences with links to the assigned pytest and OWASP readings. Codex read the pages and drafted the text at Phát's request; the AI-use log discloses this and does not claim Phát personally read or wrote it.
 - `docs/ai-use-log.md` records the work, evidence, and provenance limits without inventing authorship.
 
 ## Scope boundary
 
-This branch contains Phát's Foundation work and H1 tests in PR #81. It is related to issue #83, which records Hương's dependency on the Foundation handoff. H2 remains pending Phát's personal work. This branch does not perform P6/Final Integration, modify root `README.md` or GitHub Actions, or create a release tag.
+This branch contains Phát's Foundation work and H1/H2 artifacts in PR #81. It is related to issue #83, which records Hương's dependency on the Foundation handoff. This branch does not perform P6/Final Integration, modify root `README.md` or GitHub Actions, or create a release tag.
